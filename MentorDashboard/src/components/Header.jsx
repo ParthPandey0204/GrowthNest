@@ -9,7 +9,7 @@ function Header() {
           <span className="text-white text-2xl">☰</span>
         </button>
 
-        <h1 className="text-white text-xl md:text-2xl font-semibold tracking-tight md:ml-4" >
+        <h1 className="text-white text-xl md:text-2xl font-semibold tracking-tight " >
           GrowthNest
         </h1>
       </div>
@@ -67,8 +67,8 @@ function Header() {
           px-3 md:px-4
           py-1.5
           rounded-md
-          bg-[#1D546C]
-          text-[#0C2B4E]
+          bg-[#1A3D64]
+          text-white
           text-xs md:text-sm
           font-semibold
           shadow-sm
