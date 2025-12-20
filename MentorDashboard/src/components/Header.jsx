@@ -9,7 +9,7 @@ function Header() {
           <span className="text-white text-2xl">☰</span>
         </button>
 
-        <h1 className="text-white text-xl md:text-2xl font-semibold tracking-tight">
+        <h1 className="text-white text-xl md:text-2xl font-semibold tracking-tight md:ml-4" >
           GrowthNest
         </h1>
       </div>
