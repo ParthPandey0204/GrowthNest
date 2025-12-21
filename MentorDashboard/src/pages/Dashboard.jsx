@@ -6,7 +6,7 @@ function Dashboard() {
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(new Date());
-    }, 60000); // update every minute
+    }, 60000); 
 
     return () => clearInterval(interval);
   }, []);
@@ -16,9 +16,9 @@ function Dashboard() {
       className="
         relative
         w-full
-        h-[68px]
+        h-17
         bg-[#1D546C]
-        bg-gradient-to-r from-white/5 to-transparent
+        bg-linear-to-r from-white/5 to-transparent
         flex
         items-center
         justify-between
@@ -26,7 +26,6 @@ function Dashboard() {
         border-b border-black/10
       "
     >
-      {/* Left */}
       <div className="flex flex-col leading-tight">
         <h1 className="text-lg font-semibold text-white tracking-wide">
           Dashboard
@@ -36,9 +35,7 @@ function Dashboard() {
         </span>
       </div>
 
-      {/* Right */}
       <div className="flex items-center gap-5 text-white">
-        {/* Date & Time */}
         <div className="hidden sm:flex flex-col items-end leading-tight">
           <span className="text-sm font-medium">
             {now.toLocaleTimeString("en-IN", {
@@ -54,8 +51,6 @@ function Dashboard() {
             })}
           </span>
         </div>
-
-        {/* Notification */}
         <svg
           className="w-5 h-5 text-white/80 hover:text-white cursor-pointer"
           fill="none"
@@ -67,13 +62,13 @@ function Dashboard() {
           <path d="M10 19a2 2 0 0 0 4 0" />
         </svg>
 
-        {/* Avatar */}
+
         <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-sm font-semibold cursor-pointer">
           P
         </div>
       </div>
 
-      {/* Active underline */}
+
       <span className="absolute bottom-0 left-0 h-0.5 w-full bg-white/30" />
     </div>
   );
