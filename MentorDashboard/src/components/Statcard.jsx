@@ -40,10 +40,7 @@ const StatCard = ({
         cursor-pointer
       "
     >
-      {/* Vertical Accent Line */}
       <div className="absolute left-0 top-4 bottom-4 w-0.75 bg-[#1D546C] rounded-full" />
-
-      {/* Icon */}
       <div
         className={`
           absolute
@@ -60,8 +57,6 @@ const StatCard = ({
       >
         <IconComponent className="h-5 w-5" />
       </div>
-
-      {/* Content */}
       <div className="space-y-2">
         <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
           {title}

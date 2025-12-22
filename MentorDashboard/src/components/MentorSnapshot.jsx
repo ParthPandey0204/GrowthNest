@@ -37,7 +37,7 @@ function MentorSnapshot() {
         shadow-sm
       "
     >
-      {/* Vertical Accent Line */}
+
       <div className="absolute left-0 top-4 bottom-4 w-0.75 bg-[#1D546C] rounded-full" />
 
       <div className="flex items-center justify-between">

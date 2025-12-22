@@ -92,7 +92,6 @@ function Dashboard() {
       </div>
 
 <div className="relative pl-8 py-2 mb-10">
-  {/* The Branding Accent: Blue-Green (#1D546C) */}
   <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1D546C] rounded-full" />
   
   <div className="flex flex-col gap-1">
