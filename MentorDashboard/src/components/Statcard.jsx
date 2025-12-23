@@ -8,7 +8,8 @@ const StatCard = ({
   icon: IconComponent,
   color = "blue",
   onClick,
-}) => {
+}) => 
+  {
   const getColorClasses = (color) => {
     const colors = {
       blue: "bg-blue-50 text-blue-700",
@@ -89,7 +90,8 @@ const StatCard = ({
               trend === "up"
                 ? "text-green-500"
                 : "text-red-500 rotate-180"
-            }`}
+            }`
+          }
           />
         </div>
       </div>
