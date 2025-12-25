@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import mockUser from "../data/Mockuser";
 import {
   UsersIcon,
   PlayIcon,
@@ -11,6 +12,7 @@ import MentorSnapshot from "../components/MentorSnapshot";
 
 function Dashboard() {
   const [now, setNow] = useState(new Date());
+  const [user, setUser] = useState(mockUser)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -54,6 +56,9 @@ function Dashboard() {
       color: "green",
     },
   ];
+  const firstName = user?.name
+  ?.trim()
+  .split(/\s+/)[0];
 
   return (
     <div className="space-y-10">
@@ -86,7 +91,7 @@ function Dashboard() {
           </div>
 
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-sm font-semibold cursor-pointer">
-            P
+            {user.name.charAt(0)}
           </div>
         </div>
       </div>
@@ -96,7 +101,7 @@ function Dashboard() {
   
   <div className="flex flex-col gap-1">
     <h2 className="text-3xl font-extrabold tracking-tight text-[#0C2B4E]">
-      Welcome back, <span className="text-[#1A3D64]">Mentor</span>
+      Welcome back, <span className="text-[#1A3D64]">{firstName}</span>
     </h2>
 
   </div>

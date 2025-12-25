@@ -1,20 +1,34 @@
+import {
+  ArrowTrendingUpIcon,
+  UsersIcon,
+  CurrencyDollarIcon,
+  ClockIcon
+} from '@heroicons/react/24/outline';
+
 const StatsData = [
   {
-    id: "revenue",
-    label: "Total Revenue",
-    value: "₹12,450",
-    change: "+12%",
+    id: 'earnings',
+    title: 'Total Earnings',
+    value: '₹18,450',
+    icon: CurrencyDollarIcon,
   },
   {
-    id: "learners",
-    label: "Active Learners",
-    value: "38",
-    change: "+5",
+    id: 'learners',
+    title: 'Active Learners',
+    value: '124',
+    icon: UsersIcon,
   },
   {
-    id: "sessions",
-    label: "Upcoming Sessions",
-    value: "4",
+    id: 'growth',
+    title: 'Monthly Growth',
+    value: '+12%',
+    icon: ArrowTrendingUpIcon,
+  },
+  {
+    id: 'sessions',
+    title: 'Sessions Completed',
+    value: '36',
+    icon: ClockIcon,
   },
 ];
 
