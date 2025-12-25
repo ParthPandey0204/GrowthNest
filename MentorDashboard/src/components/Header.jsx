@@ -1,4 +1,7 @@
+import { useState } from "react";
+import mockUser from "../data/Mockuser";
 function Header() {
+  const [user , setUser] = useState(mockUser)
   return (
     <header className="w-full bg-[#0C2B4E] shadow px-4 py-3 flex items-center gap-3">
       <div className="flex items-center gap-2">
@@ -98,8 +101,8 @@ function Header() {
           <div className="h-8 w-8 rounded-full bg-gray-300 overflow-hidden">
           </div>
           <div className="leading-tight text-white text-xs md:text-sm">
-            <p className="font-medium">Mentor Name</p>
-            <p className="text-[11px] text-gray-200">Senior Mentor</p>
+            <p className="font-medium">{user.name}</p>
+            <p className="text-[11px] text-gray-200">{user.role}</p>
           </div>
         </div>
       </div>
