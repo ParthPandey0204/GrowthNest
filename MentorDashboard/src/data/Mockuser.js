@@ -1,6 +1,6 @@
 const mockUser = {
   id: "mentor_001",
-  name: "Parth Pandey",
+  name: "lavanya Mishra",
   role: "Mentor",
   email: "mentor@growthnest.dev",
   avatar: "",
