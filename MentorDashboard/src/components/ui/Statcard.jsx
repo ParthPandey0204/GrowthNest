@@ -1,15 +1,14 @@
 import { ArrowTrendingUpIcon } from "@heroicons/react/24/outline";
 
-const StatCard = ({
+function StatCard({
   title,
   value,
-  change,
+  change = 0,
   trend = "up",
   icon: IconComponent,
   color = "blue",
   onClick,
-}) => 
-  {
+}) {
   const getColorClasses = (color) => {
     const colors = {
       blue: "bg-blue-50 text-blue-700",
@@ -21,12 +20,13 @@ const StatCard = ({
     return colors[color] || colors.blue;
   };
 
-  const formatChange = (change) =>
-    `${change >= 0 ? "+" : ""}${change}%`;
+  const formatChange = (val) =>
+    `${val >= 0 ? "+" : ""}${val}%`;
 
   return (
     <div
       onClick={onClick}
+      role={onClick ? "button" : undefined}
       className="
         relative
         rounded-2xl
@@ -41,7 +41,10 @@ const StatCard = ({
         cursor-pointer
       "
     >
-      <div className="absolute left-0 top-4 bottom-4 w-0.75 bg-[#1D546C] rounded-full" />
+      {/* Left accent */}
+      <div className="absolute left-0 top-4 bottom-4 w-1 bg-[#1D546C] rounded-full" />
+
+      {/* Icon */}
       <div
         className={`
           absolute
@@ -56,15 +59,17 @@ const StatCard = ({
           ${getColorClasses(color)}
         `}
       >
-        <IconComponent className="h-5 w-5" />
+        {IconComponent && <IconComponent className="h-5 w-5" />}
       </div>
+
+      {/* Content */}
       <div className="space-y-2">
         <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
           {title}
         </p>
 
         <p className="text-3xl font-semibold text-gray-900">
-          {value.toLocaleString()}
+          {typeof value === "number" ? value.toLocaleString() : value}
         </p>
 
         <div className="flex items-center gap-2">
@@ -90,13 +95,12 @@ const StatCard = ({
               trend === "up"
                 ? "text-green-500"
                 : "text-red-500 rotate-180"
-            }`
-          }
+            }`}
           />
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default StatCard;

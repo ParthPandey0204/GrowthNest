@@ -1,15 +1,21 @@
-import { useState } from "react";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
+import { Outlet } from "react-router-dom";
+import Header from "../components/navigation/Header";
+import Sidebar from "../components/navigation/Sidebar";
 
-function DashboardLayout({ children }) {
+function DashboardLayout() {
   return (
-    <div className="min-h-screen w-full bg-[#F4F4F4]">
+    <div className="h-screen w-full bg-[#F4F4F4] flex flex-col">
+      {/* HEADER */}
       <Header />
-      <div className="flex min-h-[calc(100vh-64px)]">
+
+      {/* BODY */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* SIDEBAR */}
         <Sidebar />
-        <main className="flex-1 bg-white ">
-          {children}
+
+        {/* MAIN CONTENT */}
+        <main className="flex-1 overflow-y-auto bg-white px-6 py-6">
+          <Outlet />
         </main>
       </div>
     </div>

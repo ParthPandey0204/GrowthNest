@@ -1,12 +1,21 @@
-import DashboardLayout from "./layout/DashboardLayout";
-import Dashboard from "./pages/Dashboard";
+import { Routes, Route } from "react-router-dom";
+import DashboardLayout from "../layout/DashboardLayout";
+
+// pages
+import Dashboard from "../pages/dashboard/Dashboard.jsx";
+import Analytics from "../pages/Analytics/Analytics.jsx";
 
 function App() {
   return (
-    <DashboardLayout>
-      <Dashboard />
-    </DashboardLayout>
+    <Routes>
+      {/* Persistent dashboard layout */}
+      <Route element={<DashboardLayout />}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/analytics" element={<Analytics />} />
+      </Route>
+    </Routes>
   );
 }
 
 export default App;
+
