@@ -1,4 +1,4 @@
-import mockUser from "../../data/mockuser";
+import mockUser from "../../data/Mockuser";
 
 function Header() {
   const user = mockUser;

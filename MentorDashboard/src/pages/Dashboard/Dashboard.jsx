@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import mockUser from "../../data/mockuser";
+import mockUser from "../../data/Mockuser.js"
 import MentorSnapshot from "./MentorSnapshot";
+import ProgressPulse from "../../components/ui/ProgressPulse";
+import GrowthInsight from "../../components/ui/GrowthInsight";
+
 
 import {
   UsersIcon,
@@ -9,11 +12,17 @@ import {
   CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
 
-import StatCard from "../../components/ui/StatCard";
+import StatCard from "../../components/ui/Statcard.jsx";
 
 function Dashboard() {
   const [now, setNow] = useState(new Date());
   const user = mockUser;
+  const growthInsightData = {
+  insight:
+    "Learners who attended 2 or more live sessions completed assignments 37% faster than others.",
+  timeframe: "the last 30 days",
+};
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -58,11 +67,29 @@ function Dashboard() {
     },
   ];
 
+  const progressPulseData = [
+    {
+      label: "Learner Engagement",
+      trend: "up",
+      value: "+12% this week",
+    },
+    {
+      label: "Assignment Completion",
+      trend: "up",
+      value: "82% completion",
+    },
+    {
+      label: "Session Attendance",
+      trend: "stable",
+      value: "No change",
+    },
+  ];
+
   const firstName = user?.name?.trim().split(/\s+/)[0];
 
   return (
     <div className="space-y-10">
-      {/* Top bar */}
+      
       <div className="flex items-center justify-between bg-[#1D546C] px-6 py-4 shadow-sm">
         <div>
           <h1 className="text-lg font-semibold text-white">Dashboard</h1>
@@ -92,7 +119,7 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Welcome section */}
+    
       <div className="relative pl-8 py-2 mb-10">
         <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1D546C] rounded-full" />
 
@@ -114,15 +141,26 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Stats */}
+    
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         {stats.map((stat) => (
           <StatCard key={stat.title} {...stat} />
         ))}
       </div>
 
-      {/* Mentor Snapshot */}
-      <MentorSnapshot />
+     
+  
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <ProgressPulse items={progressPulseData} />
+
+     <GrowthInsight
+    insight={growthInsightData.insight}
+    timeframe={growthInsightData.timeframe}
+     />
+    </div>
+
+     <MentorSnapshot />
+
     </div>
   );
 }

@@ -7,7 +7,6 @@ import { StarIcon } from "@heroicons/react/24/solid";
 import mentorSnapshotData from "../../data/dashboard/MentorSnapshotData";
 
 function MentorSnapshot() {
-  // Fallback metrics (UI contract)
   const fallbackMetrics = [
     {
       id: "engagement",
@@ -54,10 +53,10 @@ function MentorSnapshot() {
 
   return (
     <div className="relative rounded-2xl bg-white p-6 pl-7 shadow-sm">
-      {/* Left accent */}
+      
       <div className="absolute left-0 top-4 bottom-4 w-1 bg-[#1D546C] rounded-full" />
 
-      {/* Header */}
+   
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">
           Mentor Performance Snapshot
@@ -69,7 +68,7 @@ function MentorSnapshot() {
         A high-level view of how your mentorship is performing.
       </p>
 
-      {/* Metrics */}
+     
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-6">
         {metrics.map(({ id, label, value, hint, icon: Icon }) => (
           <div
