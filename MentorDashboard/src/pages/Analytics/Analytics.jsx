@@ -1,19 +1,75 @@
+import { useState } from "react";
+
+import EngagementChart from "../../components/analytics/EngagementChart";
+import RevenueChart from "../../components/analytics/RevenueChart";
+
+import { engagementDataByRange } from "../../data/analytics/engagement";
+import {revenueDataByRange } from "../../data/analytics/revenue";
+import CoursePerformanceChart from "../../components/analytics/CoursePerformanceChart";
+import SessionAnalyticsChart from "../../components/analytics/SessionAnalyticsChart";
+import { coursePerformanceByCourse } from "../../data/analytics/courses";
+import { sessionAnalyticsData } from "../../data/analytics/sessions";
+
+const TIME_RANGES = ["7 Days", "30 Days", "90 Days"];
+
 function Analytics() {
+  const [timeRange, setTimeRange] = useState("30 Days");
+  const [course, setCourse] = useState("All Courses");
+  const engagementData = engagementDataByRange[timeRange];
+  const revenueData = revenueDataByRange[timeRange];
+  const courseData = coursePerformanceByCourse[course];
   return (
-    <div className="space-y-10">
-      {/* Top bar */}
-      <div className="flex items-center justify-between bg-[#1D546C] px-6 py-4 shadow-sm">
-        <div>
-          <h1 className="text-lg font-semibold text-white">Analytics</h1>
-          <p className="text-xs text-white/70">Home / Analytics</p>
-        </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold text-[#0C2B4E]">Analytics</h1>
+        <p className="text-sm text-gray-500">Home / Analytics</p>
       </div>
 
-      {/* Content placeholder */}
-      <div className="px-2">
-        <div className="rounded-lg border border-dashed border-gray-300 p-10 text-center text-sm text-gray-500">
-          Analytics content will appear here
+      {/* Filters */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          {TIME_RANGES.map((range) => (
+            <button
+              key={range}
+              onClick={() => setTimeRange(range)}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                timeRange === range
+                  ? "bg-[#1D546C] text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {range}
+            </button>
+          ))}
         </div>
+
+        <select
+          value={course}
+          onChange={(e) => setCourse(e.target.value)}
+          className="rounded-lg border px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1D546C]/40"
+        >
+          <option>All Courses</option>
+          <option>DSA Mastery</option>
+          <option>Full Stack Bootcamp</option>
+          <option>System Design Basics</option>
+        </select>
+      </div>
+
+      {/* Top charts */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <EngagementChart data={engagementData} />
+        <RevenueChart data={revenueData} />
+      </div>
+
+      {/* Course performance */}
+      <div className="rounded-xl border bg-white h-80 flex items-center justify-center text-sm text-gray-400">
+        <CoursePerformanceChart data={courseData} />
+      </div>
+
+      {/* Session analytics */}
+      <div className="rounded-xl border bg-white h-56 flex items-center justify-center text-sm text-gray-400">
+        <SessionAnalyticsChart data={sessionAnalyticsData} />
       </div>
     </div>
   );
