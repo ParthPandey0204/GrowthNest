@@ -20,13 +20,10 @@ function Analytics() {
   const courseData = coursePerformanceByCourse[course];
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold text-[#0C2B4E]">Analytics</h1>
         <p className="text-sm text-gray-500">Home / Analytics</p>
       </div>
-
-      {/* Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border bg-white p-4 shadow-sm">
         <div className="flex items-center gap-2">
           {TIME_RANGES.map((range) => (
@@ -56,23 +53,21 @@ function Analytics() {
         </select>
       </div>
 
-      {/* Top charts */}
+   
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <EngagementChart data={engagementData} />
         <RevenueChart data={revenueData} />
       </div>
 
-      {/* Course performance */}
       <div className="rounded-xl border bg-white h-80 flex items-center justify-center text-sm text-gray-400">
         <CoursePerformanceChart data={courseData} />
       </div>
 
-      {/* Session analytics */}
+      
       <div className="rounded-xl border bg-white h-56 flex items-center justify-center text-sm text-gray-400">
         <SessionAnalyticsChart data={sessionAnalyticsData} />
       </div>
     </div>
   );
 }
-
 export default Analytics;

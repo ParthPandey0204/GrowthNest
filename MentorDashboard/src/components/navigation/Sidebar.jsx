@@ -14,9 +14,14 @@ function Sidebar() {
       items: [
         {
           label: "Dashboard",
-          path: "/",
+          path: "/dashboard",
           icon: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <rect x="3" y="3" width="7" height="7" />
               <rect x="14" y="3" width="7" height="7" />
               <rect x="14" y="14" width="7" height="7" />
@@ -25,16 +30,63 @@ function Sidebar() {
           ),
         },
         {
-          label: "Analytics",
-          path: "/analytics",
+          label: "Courses",
+          path: "/dashboard/courses",
           icon: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M4 6h16" />
+              <path d="M4 12h16" />
+              <path d="M4 18h10" />
+            </svg>
+          ),
+        },
+        {
+  label: "Sessions",
+  path: "/dashboard/sessions",
+  icon: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 3" />
+    </svg>
+  ),
+},
+
+        {
+          label: "Analytics",
+          path: "/dashboard/analytics",
+          icon: (
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <line x1="12" y1="20" x2="12" y2="10" />
               <line x1="18" y1="20" x2="18" y2="4" />
               <line x1="6" y1="20" x2="6" y2="16" />
             </svg>
           ),
         },
+        {
+  label: "Messages",
+  path: "/dashboard/messages",
+  icon: (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  ),
+},
+
       ],
     },
   ];
@@ -59,7 +111,7 @@ function Sidebar() {
             ${isOpen ? "w-64 fixed top-0 left-0 h-screen md:relative" : ""}
           `}
         >
-          {/* Close (mobile) */}
+          {/* Close button (mobile) */}
           <div className="flex items-center justify-end px-4 py-3 md:hidden">
             <button
               onClick={() => setIsOpen(false)}
@@ -82,7 +134,7 @@ function Sidebar() {
                     <NavLink
                       key={label}
                       to={path}
-                      end={path === "/"}
+                      end={path === "/dashboard"}
                       onClick={() => setIsOpen(false)}
                       className={({ isActive }) =>
                         `w-full flex items-center gap-3 px-3 py-3 rounded-lg transition ${
