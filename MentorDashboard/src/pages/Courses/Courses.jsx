@@ -1,3 +1,4 @@
+import { useEffect, useState, useMemo } from "react";
 import {
   BookOpenIcon,
   CheckCircleIcon,
@@ -6,9 +7,9 @@ import {
 } from "@heroicons/react/24/outline";
 
 import StatCard from "../../components/ui/StatCard";
-import coursesData from "../../data/Courses/CourseData";
+import { getCourses } from "../../services/course.service";
 
-/* ---------- Helpers ---------- */
+/* ---------- Small UI Components ---------- */
 
 function StatusBadge({ status }) {
   const styles =
@@ -41,9 +42,11 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="mb-4 text-4xl">📘</div>
+
       <h3 className="text-lg font-semibold text-gray-900">
         No courses yet
       </h3>
+
       <p className="mt-1 text-sm text-gray-500 max-w-sm">
         Start by creating your first course and begin mentoring learners.
       </p>
@@ -58,43 +61,77 @@ function EmptyState() {
 /* ---------- Page ---------- */
 
 function Courses() {
-  const kpis = [
-    {
-      title: "Total Courses",
-      value: coursesData.length,
-      change: 12,
-      trend: "up",
-      icon: BookOpenIcon,
-      color: "blue",
-    },
-    {
-      title: "Active Courses",
-      value: coursesData.filter(c => c.status === "active").length,
-      change: 8,
-      trend: "up",
-      icon: CheckCircleIcon,
-      color: "green",
-    },
-    {
-      title: "Total Learners",
-      value: coursesData.reduce((sum, c) => sum + c.learners, 0),
-      change: 18,
-      trend: "up",
-      icon: UsersIcon,
-      color: "purple",
-    },
-    {
-      title: "Avg Completion",
-      value: `${Math.round(
-        coursesData.reduce((s, c) => s + c.avgProgress, 0) /
-          coursesData.length
-      )}%`,
-      change: -4,
-      trend: "down",
-      icon: ChartBarIcon,
-      color: "orange",
-    },
-  ];
+  const [coursesData, setCoursesData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  /* ✅ Fetch from service instead of data */
+  useEffect(() => {
+    async function loadCourses() {
+      const data = await getCourses();
+      setCoursesData(data);
+      setLoading(false);
+    }
+
+    loadCourses();
+  }, []);
+
+  /* ✅ Derived analytics (backend-ready) */
+  const kpis = useMemo(() => {
+    if (!coursesData.length)
+      return [];
+
+    return [
+      {
+        title: "Total Courses",
+        value: coursesData.length,
+        change: 12,
+        trend: "up",
+        icon: BookOpenIcon,
+        color: "blue",
+      },
+      {
+        title: "Active Courses",
+        value: coursesData.filter(c => c.status === "active").length,
+        change: 8,
+        trend: "up",
+        icon: CheckCircleIcon,
+        color: "green",
+      },
+      {
+        title: "Total Learners",
+        value: coursesData.reduce(
+          (sum, c) => sum + c.learners,
+          0
+        ),
+        change: 18,
+        trend: "up",
+        icon: UsersIcon,
+        color: "purple",
+      },
+      {
+        title: "Avg Completion",
+        value: `${Math.round(
+          coursesData.reduce(
+            (s, c) => s + c.avgProgress,
+            0
+          ) / coursesData.length
+        )}%`,
+        change: -4,
+        trend: "down",
+        icon: ChartBarIcon,
+        color: "orange",
+      },
+    ];
+  }, [coursesData]);
+
+  /* ---------- Loading State ---------- */
+  if (loading) {
+    return (
+      <div className="p-6 text-sm text-gray-500">
+        Loading courses...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -104,6 +141,7 @@ function Courses() {
           <h1 className="text-2xl font-semibold text-gray-900">
             Courses
           </h1>
+
           <p className="mt-1 text-sm text-gray-500">
             Manage and monitor your courses
           </p>
@@ -137,18 +175,15 @@ function Courses() {
                 <th className="px-6 py-4 text-left font-medium">
                   Avg Progress
                 </th>
-                <th className="px-6 py-4 text-right font-medium">Actions</th>
+                <th className="px-6 py-4 text-right font-medium">
+                  Actions
+                </th>
               </tr>
             </thead>
 
             <tbody className="divide-y">
               {coursesData.map(course => (
-                <tr
-                  key={course.id}
-                  className={`transition hover:bg-gray-50 ${
-                    course.status === "draft" ? "bg-gray-50/50" : ""
-                  }`}
-                >
+                <tr key={course.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-gray-900">
                     {course.title}
                   </td>
@@ -166,15 +201,9 @@ function Courses() {
                   </td>
 
                   <td className="px-6 py-4 text-right">
-                    {course.status === "draft" ? (
-                      <button className="text-sm font-medium text-orange-600 hover:underline">
-                        Edit
-                      </button>
-                    ) : (
-                      <button className="text-sm font-medium text-[#1D546C] hover:underline">
-                        View
-                      </button>
-                    )}
+                    <button className="text-sm font-medium text-[#1D546C] hover:underline">
+                      View
+                    </button>
                   </td>
                 </tr>
               ))}
