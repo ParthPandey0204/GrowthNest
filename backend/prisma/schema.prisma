@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  MENTOR
+  STUDENT
+}
+
+enum ProgramStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum LessonType {
+  VIDEO
+  ARTICLE
+  LIVE
+  ASSIGNMENT
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+}
+
+enum AssignmentStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  REVIEWED
+  RETURNED
+}
+
+enum SessionStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum LessonProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+model User {
+  id             String           @id @default(cuid())
+  name           String
+  email          String           @unique
+  password       String
+  role           UserRole         @default(STUDENT)
+  avatar         String?
+  bio            String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  programsLed    Program[]        @relation("ProgramMentor")
+  enrollments    Enrollment[]
+  submissions    Submission[]
+  hostedSessions Session[]        @relation("SessionMentor")
+  lessonProgress LessonProgress[]
+}
+
+model Program {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  status      ProgramStatus @default(DRAFT)
+  mentorId    String
+  mentor      User          @relation("ProgramMentor", fields: [mentorId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+  enrollments Enrollment[]
+  sessions    Session[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Lesson {
+  id             String           @id @default(cuid())
+  title          String
+  content        String?
+  type           LessonType       @default(ARTICLE)
+  order          Int
+  programId      String
+  program        Program          @relation(fields: [programId], references: [id], onDelete: Cascade)
+  assignments    Assignment[]
+  lessonProgress LessonProgress[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([programId, order])
+}
+
+model Enrollment {
+  id          String           @id @default(cuid())
+  userId      String
+  programId   String
+  status      EnrollmentStatus @default(ACTIVE)
+  enrolledAt  DateTime         @default(now())
+  completedAt DateTime?
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program     Program          @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId])
+}
+
+model Assignment {
+  id          String           @id @default(cuid())
+  title       String
+  prompt      String
+  dueAt       DateTime?
+  status      AssignmentStatus @default(DRAFT)
+  lessonId    String
+  lesson      Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Submission {
+  id           String           @id @default(cuid())
+  content      String
+  grade        Float?
+  feedback     String?
+  status       SubmissionStatus @default(SUBMITTED)
+  submittedAt  DateTime         @default(now())
+  reviewedAt   DateTime?
+  assignmentId String
+  userId       String
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, userId])
+}
+
+model Session {
+  id         String        @id @default(cuid())
+  title      String
+  notes      String?
+  startsAt   DateTime
+  endsAt     DateTime?
+  meetingUrl String?
+  status     SessionStatus @default(SCHEDULED)
+  mentorId   String
+  programId  String?
+  mentor     User          @relation("SessionMentor", fields: [mentorId], references: [id], onDelete: Cascade)
+  program    Program?      @relation(fields: [programId], references: [id], onDelete: SetNull)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model LessonProgress {
+  id          String               @id @default(cuid())
+  userId      String
+  lessonId    String
+  status      LessonProgressStatus @default(NOT_STARTED)
+  progress    Int                  @default(0)
+  completedAt DateTime?
+  updatedAt   DateTime             @updatedAt
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson      Lesson               @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+}
