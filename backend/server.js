@@ -41,6 +41,42 @@ const signToken = (user) => {
   );
 };
 
+const authenticate = async (req, res, next) => {
+  try {
+    const authHeader = req.get('authorization');
+    const [scheme, token] = authHeader ? authHeader.split(' ') : [];
+
+    if (scheme !== 'Bearer' || !token) {
+      return res.status(401).json({ message: 'Authentication token is required' });
+    }
+
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+
+    const payload = jwt.verify(token, jwtSecret);
+    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid authentication token' });
+    }
+
+    req.user = user;
+    return next();
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Invalid authentication token' });
+    }
+
+    console.error('Authentication error:', error);
+
+    if (error.message === 'JWT_SECRET is not configured') {
+      return res.status(500).json({ message: error.message });
+    }
+
+    return res.status(500).json({ message: 'Unable to authenticate request' });
+  }
+};
 const handleValidation = (req, res, next) => {
   const errors = validationResult(req);
 
@@ -87,6 +123,9 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+app.get('/api/auth/me', authenticate, (req, res) => {
+  res.status(200).json({ user: sanitizeUser(req.user) });
+});
 app.post('/api/auth/register', registerValidation, handleValidation, async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
