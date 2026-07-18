@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
+import AuthLayout from "../layouts/AuthLayout";
+import ProtectedRoute from "./ProtectedRoute";
 
 // Pages
 import Dashboard from "../pages/dashboard/Dashboard";
@@ -8,14 +10,24 @@ import CourseDetails from "../pages/courses/CourseDetails";
 import Courses from "../pages/courses/Courses";
 import Messages from "../pages/messages/Messages";
 import Sessions from "../pages/sessions/Sessions";
-
-
-
+import Login from "../pages/auth/Login";
+import Register from "../pages/auth/Register";
 
 function App() {
   return (
     <Routes>
-      <Route element={<DashboardLayout />}>
+      <Route element={<AuthLayout />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
+
+      <Route
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/dashboard/analytics" element={<Analytics />} />
@@ -24,7 +36,7 @@ function App() {
           path="/dashboard/courses/:courseId"
           element={<CourseDetails />}
         />
-        <Route path="/dashboard/messages" element={<Messages />} />      
+        <Route path="/dashboard/messages" element={<Messages />} />
         <Route path="/dashboard/sessions" element={<Sessions />} />
       </Route>
     </Routes>
