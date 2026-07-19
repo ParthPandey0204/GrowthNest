@@ -1,8 +1,10 @@
-import mockUser from "../../data/Mockuser";
+import { useAuth } from "../../store/AuthContext";
 
 function Header({ onMenuToggle }) {
-  const user = mockUser;
-  const firstName = user.name.split(" ")[0];
+  const { user } = useAuth();
+  const displayName = user?.name || "GrowthNest User";
+  const firstName = displayName.trim().split(/\s+/)[0];
+  const displayRole = user?.role || "Member";
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-[linear-gradient(135deg,#081c35,#0f3259_58%,#184c77)] shadow-[0_18px_40px_rgba(8,28,53,0.18)] backdrop-blur">
@@ -95,9 +97,9 @@ function Header({ onMenuToggle }) {
               {firstName.charAt(0)}
             </div>
             <div className="leading-tight">
-              <p className="text-sm font-medium">{user.name}</p>
+              <p className="text-sm font-medium">{displayName}</p>
               <p className="text-[11px] uppercase tracking-wide text-sky-100/70">
-                {user.role}
+                {displayRole}
               </p>
             </div>
           </div>

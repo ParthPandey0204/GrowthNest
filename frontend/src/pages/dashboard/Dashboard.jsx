@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import mockUser from "../../data/Mockuser.js"
+import { useAuth } from "../../store/AuthContext";
 import MentorSnapshot from "./MentorSnapshot";
 import ProgressPulse from "../../components/ui/ProgressPulse";
 import GrowthInsight from "../../components/ui/GrowthInsight";
@@ -9,7 +9,8 @@ import StatCard from "../../components/ui/StatCard.jsx";
 
 function Dashboard() {
   const [now, setNow] = useState(new Date());
-  const user = mockUser;
+  const { user } = useAuth();
+  const displayName = user?.name || "GrowthNest User";
   const growthInsightData = {
   insight:
     "Learners who attended 2 or more live sessions completed assignments 37% faster than others.",
@@ -25,7 +26,7 @@ function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const firstName = user?.name?.trim().split(/\s+/)[0];
+  const firstName = displayName.trim().split(/\s+/)[0];
 
   return (
     <div className="space-y-10">
@@ -54,7 +55,7 @@ function Dashboard() {
           </div>
 
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-sm font-semibold cursor-pointer">
-            {user.name.charAt(0)}
+            {displayName.charAt(0)}
           </div>
         </div>
       </div>
@@ -76,7 +77,7 @@ function Dashboard() {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
           </span>
           <span className="text-[11px] font-bold uppercase tracking-widest text-[#0C2B4E]/50">
-            System Live • Analytics Synchronized
+            System Live / Analytics Synchronized
           </span>
         </div>
       </div>
