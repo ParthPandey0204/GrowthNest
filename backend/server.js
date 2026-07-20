@@ -10,6 +10,7 @@ const { body, validationResult } = require('express-validator');
 
 const prisma = require('./prisma/client');
 const authMiddleware = require('./middleware/authMiddleware');
+const roleMiddleware = require('./middleware/roleMiddleware');
 
 const app = express();
 
@@ -84,6 +85,29 @@ const loginValidation = [
   body('password').isString().notEmpty().withMessage('Password is required'),
 ];
 
+const createProgramValidation = [
+  body('title')
+    .trim()
+    .notEmpty()
+    .withMessage('Title is required')
+    .isLength({ max: 200 })
+    .withMessage('Title must be 200 characters or fewer'),
+  body('description')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 5000 })
+    .withMessage('Description must be 5000 characters or fewer'),
+  body('price')
+    .optional({ values: 'null' })
+    .isFloat({ min: 0 })
+    .withMessage('Price must be a non-negative number'),
+  body('thumbnail')
+    .optional({ values: 'falsy' })
+    .trim()
+    .isURL()
+    .withMessage('Thumbnail must be a valid URL'),
+];
+
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
@@ -151,6 +175,34 @@ app.post('/api/auth/login', loginValidation, handleValidation, async (req, res) 
     return res.status(500).json({ message: 'Unable to log in' });
   }
 });
+
+app.post(
+  '/api/programs',
+  authMiddleware,
+  roleMiddleware('MENTOR'),
+  createProgramValidation,
+  handleValidation,
+  async (req, res) => {
+    try {
+      const { title, description, price, thumbnail } = req.body;
+
+      const program = await prisma.program.create({
+        data: {
+          title,
+          description: description || null,
+          price: price != null ? price : null,
+          thumbnail: thumbnail || null,
+          mentorId: req.user.id,
+        },
+      });
+
+      return res.status(201).json({ program });
+    } catch (error) {
+      console.error('Create program error:', error);
+      return res.status(500).json({ message: 'Unable to create program' });
+    }
+  }
+);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

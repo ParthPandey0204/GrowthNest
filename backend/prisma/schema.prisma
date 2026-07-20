@@ -77,6 +77,8 @@ model Program {
   id          String        @id @default(cuid())
   title       String
   description String?
+  price       Decimal?      @db.Decimal(10, 2)
+  thumbnail   String?
   status      ProgramStatus @default(DRAFT)
   mentorId    String
   mentor      User          @relation("ProgramMentor", fields: [mentorId], references: [id], onDelete: Cascade)
