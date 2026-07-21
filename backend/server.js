@@ -6,7 +6,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { body, validationResult } = require('express-validator');
+const { body, query, validationResult } = require('express-validator');
 
 const prisma = require('./prisma/client');
 const authMiddleware = require('./middleware/authMiddleware');
@@ -108,6 +108,26 @@ const createProgramValidation = [
     .withMessage('Thumbnail must be a valid URL'),
 ];
 
+const listProgramsValidation = [
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer')
+    .toInt(),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100')
+    .toInt(),
+];
+
+const mentorPublicSelect = {
+  id: true,
+  name: true,
+  avatar: true,
+  bio: true,
+};
+
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
@@ -203,6 +223,66 @@ app.post(
     }
   }
 );
+
+app.get('/api/programs', listProgramsValidation, handleValidation, async (req, res) => {
+  try {
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const where = { status: 'ACTIVE' };
+
+    const [programs, total] = await Promise.all([
+      prisma.program.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          mentor: { select: mentorPublicSelect },
+        },
+      }),
+      prisma.program.count({ where }),
+    ]);
+
+    return res.status(200).json({
+      programs,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+    });
+  } catch (error) {
+    console.error('List programs error:', error);
+    return res.status(500).json({ message: 'Unable to fetch programs' });
+  }
+});
+
+app.get('/api/programs/:id', async (req, res) => {
+  try {
+    const program = await prisma.program.findFirst({
+      where: {
+        id: req.params.id,
+        status: 'ACTIVE',
+      },
+      include: {
+        mentor: { select: mentorPublicSelect },
+        lessons: { orderBy: { order: 'asc' } },
+      },
+    });
+
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
+    }
+
+    return res.status(200).json({ program });
+  } catch (error) {
+    console.error('Get program error:', error);
+    return res.status(500).json({ message: 'Unable to fetch program' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
