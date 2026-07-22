@@ -108,6 +108,34 @@ const createProgramValidation = [
     .withMessage('Thumbnail must be a valid URL'),
 ];
 
+const updateProgramValidation = [
+  body('title')
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage('Title cannot be empty')
+    .isLength({ max: 200 })
+    .withMessage('Title must be 200 characters or fewer'),
+  body('description')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 5000 })
+    .withMessage('Description must be 5000 characters or fewer'),
+  body('price')
+    .optional({ values: 'null' })
+    .isFloat({ min: 0 })
+    .withMessage('Price must be a non-negative number'),
+  body('thumbnail')
+    .optional({ values: 'falsy' })
+    .trim()
+    .isURL()
+    .withMessage('Thumbnail must be a valid URL'),
+  body('status')
+    .optional()
+    .isIn(['DRAFT', 'ACTIVE', 'ARCHIVED'])
+    .withMessage('Status must be one of: DRAFT, ACTIVE, ARCHIVED'),
+];
+
 const listProgramsValidation = [
   query('page')
     .optional()
@@ -283,6 +311,79 @@ app.get('/api/programs/:id', async (req, res) => {
     return res.status(500).json({ message: 'Unable to fetch program' });
   }
 });
+
+app.put(
+  '/api/programs/:id',
+  authMiddleware,
+  roleMiddleware('MENTOR'),
+  updateProgramValidation,
+  handleValidation,
+  async (req, res) => {
+    try {
+      const existingProgram = await prisma.program.findUnique({
+        where: { id: req.params.id },
+      });
+
+      if (!existingProgram) {
+        return res.status(404).json({ message: 'Program not found' });
+      }
+
+      if (existingProgram.mentorId !== req.user.id) {
+        return res.status(403).json({ message: 'Forbidden: You do not own this program' });
+      }
+
+      const { title, description, price, thumbnail, status } = req.body;
+      const updateData = {};
+
+      if (title !== undefined) updateData.title = title;
+      if (description !== undefined) updateData.description = description;
+      if (price !== undefined) updateData.price = price != null ? price : null;
+      if (thumbnail !== undefined) updateData.thumbnail = thumbnail || null;
+      if (status !== undefined) updateData.status = status;
+
+      const program = await prisma.program.update({
+        where: { id: req.params.id },
+        data: updateData,
+      });
+
+      return res.status(200).json({ program });
+    } catch (error) {
+      console.error('Update program error:', error);
+      return res.status(500).json({ message: 'Unable to update program' });
+    }
+  }
+);
+
+app.delete(
+  '/api/programs/:id',
+  authMiddleware,
+  roleMiddleware('MENTOR'),
+  async (req, res) => {
+    try {
+      const existingProgram = await prisma.program.findUnique({
+        where: { id: req.params.id },
+      });
+
+      if (!existingProgram) {
+        return res.status(404).json({ message: 'Program not found' });
+      }
+
+      if (existingProgram.mentorId !== req.user.id) {
+        return res.status(403).json({ message: 'Forbidden: You do not own this program' });
+      }
+
+      const program = await prisma.program.update({
+        where: { id: req.params.id },
+        data: { status: 'ARCHIVED' },
+      });
+
+      return res.status(200).json({ message: 'Program archived successfully', program });
+    } catch (error) {
+      console.error('Delete program error:', error);
+      return res.status(500).json({ message: 'Unable to archive program' });
+    }
+  }
+);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
