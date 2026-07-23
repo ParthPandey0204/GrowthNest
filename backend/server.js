@@ -136,6 +136,30 @@ const updateProgramValidation = [
     .withMessage('Status must be one of: DRAFT, ACTIVE, ARCHIVED'),
 ];
 
+const validLessonTypes = ['VIDEO', 'ARTICLE', 'LIVE', 'ASSIGNMENT'];
+
+const createLessonValidation = [
+  body('title')
+    .trim()
+    .notEmpty()
+    .withMessage('Title is required')
+    .isLength({ max: 200 })
+    .withMessage('Title must be 200 characters or fewer'),
+  body('content')
+    .optional({ values: 'null' })
+    .isString()
+    .withMessage('Content must be a string'),
+  body('type')
+    .optional()
+    .isIn(validLessonTypes)
+    .withMessage(`Type must be one of: ${validLessonTypes.join(', ')}`),
+  body('order')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Order must be a positive integer')
+    .toInt(),
+];
+
 const listProgramsValidation = [
   query('page')
     .optional()
@@ -381,6 +405,89 @@ app.delete(
     } catch (error) {
       console.error('Delete program error:', error);
       return res.status(500).json({ message: 'Unable to archive program' });
+    }
+  }
+);
+
+app.post(
+  '/api/programs/:id/lessons',
+  authMiddleware,
+  roleMiddleware('MENTOR'),
+  createLessonValidation,
+  handleValidation,
+  async (req, res) => {
+    try {
+      const existingProgram = await prisma.program.findUnique({
+        where: { id: req.params.id },
+      });
+
+      if (!existingProgram) {
+        return res.status(404).json({ message: 'Program not found' });
+      }
+
+      if (existingProgram.mentorId !== req.user.id) {
+        return res.status(403).json({ message: 'Forbidden: You do not own this program' });
+      }
+
+      let { title, content, type, order } = req.body;
+
+      if (order === undefined || order === null) {
+        const maxLesson = await prisma.lesson.findFirst({
+          where: { programId: req.params.id },
+          orderBy: { order: 'desc' },
+          select: { order: true },
+        });
+        order = maxLesson ? maxLesson.order + 1 : 1;
+      }
+
+      const lesson = await prisma.lesson.create({
+        data: {
+          title,
+          content: content || null,
+          type: type || 'ARTICLE',
+          order,
+          programId: req.params.id,
+        },
+      });
+
+      return res.status(201).json({ lesson });
+    } catch (error) {
+      console.error('Create lesson error:', error);
+
+      if (error.code === 'P2002') {
+        return res
+          .status(409)
+          .json({ message: 'A lesson with this order already exists in the program' });
+      }
+
+      return res.status(500).json({ message: 'Unable to create lesson' });
+    }
+  }
+);
+
+app.get(
+  '/api/programs/:id/lessons',
+  authMiddleware,
+  roleMiddleware('STUDENT', 'MENTOR', 'ADMIN'),
+  async (req, res) => {
+    try {
+      const existingProgram = await prisma.program.findUnique({
+        where: { id: req.params.id },
+      });
+
+      if (!existingProgram) {
+        return res.status(404).json({ message: 'Program not found' });
+      }
+
+      const lessons = await prisma.lesson.findMany({
+        where: { programId: req.params.id },
+        orderBy: { order: 'asc' },
+      });
+
+      return res.status(200).json({ lessons });
+    } catch (error) {
+      console.error('List lessons error:', error);
+      return res.status(500).json({ message: 'Unable to fetch lessons' });
     }
   }
 );
