@@ -160,6 +160,13 @@ const createLessonValidation = [
     .toInt(),
 ];
 
+const createEnrollmentValidation = [
+  body('programId')
+    .trim()
+    .notEmpty()
+    .withMessage('Program ID is required'),
+];
+
 const listProgramsValidation = [
   query('page')
     .optional()
@@ -488,6 +495,95 @@ app.get(
     } catch (error) {
       console.error('List lessons error:', error);
       return res.status(500).json({ message: 'Unable to fetch lessons' });
+    }
+  }
+);
+
+app.post(
+  '/api/enrollments',
+  authMiddleware,
+  roleMiddleware('STUDENT'),
+  createEnrollmentValidation,
+  handleValidation,
+  async (req, res) => {
+    try {
+      const { programId } = req.body;
+
+      const program = await prisma.program.findUnique({
+        where: { id: programId },
+      });
+
+      if (!program) {
+        return res.status(404).json({ message: 'Program not found' });
+      }
+
+      if (program.status !== 'ACTIVE') {
+        return res.status(400).json({ message: 'Cannot enroll in a program that is not active' });
+      }
+
+      const existingEnrollment = await prisma.enrollment.findUnique({
+        where: {
+          userId_programId: {
+            userId: req.user.id,
+            programId,
+          },
+        },
+      });
+
+      if (existingEnrollment) {
+        return res.status(409).json({ message: 'You are already enrolled in this program' });
+      }
+
+      const enrollment = await prisma.enrollment.create({
+        data: {
+          userId: req.user.id,
+          programId,
+          status: 'ACTIVE',
+        },
+        include: {
+          program: {
+            include: {
+              mentor: { select: mentorPublicSelect },
+            },
+          },
+        },
+      });
+
+      return res.status(201).json({ enrollment });
+    } catch (error) {
+      console.error('Create enrollment error:', error);
+
+      if (error.code === 'P2002') {
+        return res.status(409).json({ message: 'You are already enrolled in this program' });
+      }
+
+      return res.status(500).json({ message: 'Unable to enroll in program' });
+    }
+  }
+);
+
+app.get(
+  '/api/enrollments/me',
+  authMiddleware,
+  roleMiddleware('STUDENT'),
+  async (req, res) => {
+    try {
+      const enrollments = await prisma.enrollment.findMany({
+        where: { userId: req.user.id },
+        orderBy: { enrolledAt: 'desc' },
+        include: {
+          program: {
+            include: {
+              mentor: { select: mentorPublicSelect },
+            },
+          },
+        },
+      });
+
+      return res.status(200).json({ enrollments });
+    } catch (error) {
+      console.error('List my enrollments error:', error);
+      return res.status(500).json({ message: 'Unable to fetch enrollments' });
     }
   }
 );
