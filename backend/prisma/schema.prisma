@@ -110,6 +110,7 @@ model Enrollment {
   userId      String
   programId   String
   status      EnrollmentStatus @default(ACTIVE)
+  progress    Int              @default(0)
   enrolledAt  DateTime         @default(now())
   completedAt DateTime?
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)

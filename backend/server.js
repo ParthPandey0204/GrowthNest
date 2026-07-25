@@ -167,6 +167,13 @@ const createEnrollmentValidation = [
     .withMessage('Program ID is required'),
 ];
 
+const updateProgressValidation = [
+  body('progress')
+    .isInt({ min: 0, max: 100 })
+    .withMessage('Progress must be an integer between 0 and 100')
+    .toInt(),
+];
+
 const listProgramsValidation = [
   query('page')
     .optional()
@@ -584,6 +591,100 @@ app.get(
     } catch (error) {
       console.error('List my enrollments error:', error);
       return res.status(500).json({ message: 'Unable to fetch enrollments' });
+    }
+  }
+);
+
+app.get(
+  '/api/programs/:id/enrollments',
+  authMiddleware,
+  roleMiddleware('MENTOR'),
+  async (req, res) => {
+    try {
+      const existingProgram = await prisma.program.findUnique({
+        where: { id: req.params.id },
+      });
+
+      if (!existingProgram) {
+        return res.status(404).json({ message: 'Program not found' });
+      }
+
+      if (existingProgram.mentorId !== req.user.id) {
+        return res.status(403).json({ message: 'Forbidden: You do not own this program' });
+      }
+
+      const enrollments = await prisma.enrollment.findMany({
+        where: { programId: req.params.id },
+        orderBy: { enrolledAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+              bio: true,
+              createdAt: true,
+            },
+          },
+        },
+      });
+
+      return res.status(200).json({ enrollments });
+    } catch (error) {
+      console.error('List program enrollments error:', error);
+      return res.status(500).json({ message: 'Unable to fetch enrollments' });
+    }
+  }
+);
+
+app.patch(
+  '/api/enrollments/:id/progress',
+  authMiddleware,
+  roleMiddleware('STUDENT'),
+  updateProgressValidation,
+  handleValidation,
+  async (req, res) => {
+    try {
+      const existingEnrollment = await prisma.enrollment.findUnique({
+        where: { id: req.params.id },
+      });
+
+      if (!existingEnrollment) {
+        return res.status(404).json({ message: 'Enrollment not found' });
+      }
+
+      if (existingEnrollment.userId !== req.user.id) {
+        return res.status(403).json({ message: 'Forbidden: You do not own this enrollment' });
+      }
+
+      const { progress } = req.body;
+      const updateData = { progress };
+
+      if (progress === 100) {
+        updateData.status = 'COMPLETED';
+        updateData.completedAt = new Date();
+      } else if (existingEnrollment.status === 'COMPLETED' && progress < 100) {
+        updateData.status = 'ACTIVE';
+        updateData.completedAt = null;
+      }
+
+      const enrollment = await prisma.enrollment.update({
+        where: { id: req.params.id },
+        data: updateData,
+        include: {
+          program: {
+            include: {
+              mentor: { select: mentorPublicSelect },
+            },
+          },
+        },
+      });
+
+      return res.status(200).json({ enrollment });
+    } catch (error) {
+      console.error('Update enrollment progress error:', error);
+      return res.status(500).json({ message: 'Unable to update progress' });
     }
   }
 );
