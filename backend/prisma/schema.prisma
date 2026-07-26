@@ -83,6 +83,7 @@ model Program {
   mentorId    String
   mentor      User          @relation("ProgramMentor", fields: [mentorId], references: [id], onDelete: Cascade)
   lessons     Lesson[]
+  assignments Assignment[]
   enrollments Enrollment[]
   sessions    Session[]
   createdAt   DateTime      @default(now())
@@ -122,11 +123,14 @@ model Enrollment {
 model Assignment {
   id          String           @id @default(cuid())
   title       String
-  prompt      String
+  description String?
+  prompt      String?
   dueAt       DateTime?
-  status      AssignmentStatus @default(DRAFT)
-  lessonId    String
-  lesson      Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  status      AssignmentStatus @default(PUBLISHED)
+  programId   String?
+  program     Program?         @relation(fields: [programId], references: [id], onDelete: Cascade)
+  lessonId    String?
+  lesson      Lesson?          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   submissions Submission[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt

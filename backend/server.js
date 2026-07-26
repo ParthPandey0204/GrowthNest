@@ -174,6 +174,35 @@ const updateProgressValidation = [
     .toInt(),
 ];
 
+const createAssignmentValidation = [
+  body('title')
+    .trim()
+    .notEmpty()
+    .withMessage('Title is required')
+    .isLength({ max: 200 })
+    .withMessage('Title must be 200 characters or fewer'),
+  body('description')
+    .optional({ values: 'null' })
+    .isString()
+    .withMessage('Description must be a string'),
+  body('dueDate')
+    .optional({ values: 'null' })
+    .isISO8601()
+    .withMessage('dueDate must be a valid ISO8601 date string'),
+  body('programId')
+    .trim()
+    .notEmpty()
+    .withMessage('programId is required'),
+];
+
+const listAssignmentsQueryValidation = [
+  query('programId')
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage('programId cannot be empty'),
+];
+
 const listProgramsValidation = [
   query('page')
     .optional()
@@ -685,6 +714,83 @@ app.patch(
     } catch (error) {
       console.error('Update enrollment progress error:', error);
       return res.status(500).json({ message: 'Unable to update progress' });
+    }
+  }
+);
+
+app.post(
+  '/api/assignments',
+  authMiddleware,
+  roleMiddleware('MENTOR'),
+  createAssignmentValidation,
+  handleValidation,
+  async (req, res) => {
+    try {
+      const { title, description, dueDate, programId } = req.body;
+
+      const program = await prisma.program.findUnique({
+        where: { id: programId },
+      });
+
+      if (!program) {
+        return res.status(404).json({ message: 'Program not found' });
+      }
+
+      if (program.mentorId !== req.user.id) {
+        return res.status(403).json({ message: 'Forbidden: You do not own this program' });
+      }
+
+      const assignment = await prisma.assignment.create({
+        data: {
+          title,
+          description: description || null,
+          prompt: description || null,
+          dueAt: dueDate ? new Date(dueDate) : null,
+          programId,
+          status: 'PUBLISHED',
+        },
+      });
+
+      return res.status(201).json({ assignment });
+    } catch (error) {
+      console.error('Create assignment error:', error);
+      return res.status(500).json({ message: 'Unable to create assignment' });
+    }
+  }
+);
+
+app.get(
+  '/api/assignments',
+  authMiddleware,
+  roleMiddleware('STUDENT', 'MENTOR', 'ADMIN'),
+  listAssignmentsQueryValidation,
+  handleValidation,
+  async (req, res) => {
+    try {
+      const { programId } = req.query;
+      const where = {};
+
+      if (programId) {
+        const program = await prisma.program.findUnique({
+          where: { id: programId },
+        });
+
+        if (!program) {
+          return res.status(404).json({ message: 'Program not found' });
+        }
+
+        where.programId = programId;
+      }
+
+      const assignments = await prisma.assignment.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return res.status(200).json({ assignments });
+    } catch (error) {
+      console.error('List assignments error:', error);
+      return res.status(500).json({ message: 'Unable to fetch assignments' });
     }
   }
 );
