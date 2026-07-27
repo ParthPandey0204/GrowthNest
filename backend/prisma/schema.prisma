@@ -138,7 +138,8 @@ model Assignment {
 
 model Submission {
   id           String           @id @default(cuid())
-  content      String
+  content      String?
+  fileUrl      String?
   grade        Float?
   feedback     String?
   status       SubmissionStatus @default(SUBMITTED)

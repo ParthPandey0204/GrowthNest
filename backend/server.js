@@ -6,6 +6,9 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const { body, query, validationResult } = require('express-validator');
 
 const prisma = require('./prisma/client');
@@ -20,10 +23,25 @@ const jwtSecret = process.env.JWT_SECRET;
 const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '7d';
 const validRoles = ['ADMIN', 'MENTOR', 'STUDENT'];
 
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
+  },
+});
+const upload = multer({ storage });
+
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(morgan('dev'));
 app.use(express.json());
+app.use('/uploads', express.static(uploadsDir));
 
 const sanitizeUser = ({ password, ...user }) => user;
 
@@ -201,6 +219,21 @@ const listAssignmentsQueryValidation = [
     .trim()
     .notEmpty()
     .withMessage('programId cannot be empty'),
+];
+
+const createSubmissionValidation = [
+  body('assignmentId')
+    .trim()
+    .notEmpty()
+    .withMessage('assignmentId is required'),
+  body('content')
+    .optional({ values: 'null' })
+    .isString()
+    .withMessage('content must be a string'),
+  body('fileUrl')
+    .optional({ values: 'null' })
+    .isString()
+    .withMessage('fileUrl must be a string'),
 ];
 
 const listProgramsValidation = [
@@ -791,6 +824,122 @@ app.get(
     } catch (error) {
       console.error('List assignments error:', error);
       return res.status(500).json({ message: 'Unable to fetch assignments' });
+    }
+  }
+);
+
+app.post(
+  '/api/submissions',
+  authMiddleware,
+  roleMiddleware('STUDENT'),
+  upload.single('file'),
+  createSubmissionValidation,
+  handleValidation,
+  async (req, res) => {
+    try {
+      const { assignmentId, content, fileUrl: bodyFileUrl } = req.body;
+
+      const assignment = await prisma.assignment.findUnique({
+        where: { id: assignmentId },
+      });
+
+      if (!assignment) {
+        return res.status(404).json({ message: 'Assignment not found' });
+      }
+
+      let uploadedFileUrl = bodyFileUrl || null;
+      if (req.file) {
+        uploadedFileUrl = `/uploads/${req.file.filename}`;
+      }
+
+      if (!content && !uploadedFileUrl) {
+        return res
+          .status(400)
+          .json({ message: 'Either content, fileUrl, or a file upload is required' });
+      }
+
+      const submission = await prisma.submission.upsert({
+        where: {
+          assignmentId_userId: {
+            assignmentId,
+            userId: req.user.id,
+          },
+        },
+        update: {
+          content: content || null,
+          fileUrl: uploadedFileUrl,
+          status: 'SUBMITTED',
+          submittedAt: new Date(),
+        },
+        create: {
+          assignmentId,
+          userId: req.user.id,
+          content: content || null,
+          fileUrl: uploadedFileUrl,
+          status: 'SUBMITTED',
+        },
+        include: {
+          assignment: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+            },
+          },
+        },
+      });
+
+      return res.status(201).json({ submission });
+    } catch (error) {
+      console.error('Submit assignment error:', error);
+      return res.status(500).json({ message: 'Unable to submit assignment' });
+    }
+  }
+);
+
+app.get(
+  '/api/assignments/:id/submissions',
+  authMiddleware,
+  roleMiddleware('MENTOR'),
+  async (req, res) => {
+    try {
+      const assignment = await prisma.assignment.findUnique({
+        where: { id: req.params.id },
+        include: {
+          program: true,
+        },
+      });
+
+      if (!assignment) {
+        return res.status(404).json({ message: 'Assignment not found' });
+      }
+
+      if (assignment.program && assignment.program.mentorId !== req.user.id) {
+        return res.status(403).json({ message: 'Forbidden: You do not own the program for this assignment' });
+      }
+
+      const submissions = await prisma.submission.findMany({
+        where: { assignmentId: req.params.id },
+        orderBy: { submittedAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+              bio: true,
+            },
+          },
+        },
+      });
+
+      return res.status(200).json({ submissions });
+    } catch (error) {
+      console.error('List submissions error:', error);
+      return res.status(500).json({ message: 'Unable to fetch submissions' });
     }
   }
 );
