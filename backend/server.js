@@ -236,6 +236,27 @@ const createSubmissionValidation = [
     .withMessage('fileUrl must be a string'),
 ];
 
+const reviewSubmissionValidation = [
+  body('grade')
+    .optional({ values: 'null' })
+    .isFloat({ min: 0 })
+    .withMessage('Grade/score must be a non-negative number')
+    .toFloat(),
+  body('score')
+    .optional({ values: 'null' })
+    .isFloat({ min: 0 })
+    .withMessage('Grade/score must be a non-negative number')
+    .toFloat(),
+  body('feedback')
+    .optional({ values: 'null' })
+    .isString()
+    .withMessage('Feedback must be a string'),
+  body('status')
+    .optional()
+    .isIn(['REVIEWED', 'RETURNED'])
+    .withMessage('Status must be one of: REVIEWED, RETURNED'),
+];
+
 const listProgramsValidation = [
   query('page')
     .optional()
@@ -940,6 +961,100 @@ app.get(
     } catch (error) {
       console.error('List submissions error:', error);
       return res.status(500).json({ message: 'Unable to fetch submissions' });
+    }
+  }
+);
+
+app.get(
+  '/api/submissions/me',
+  authMiddleware,
+  roleMiddleware('STUDENT'),
+  async (req, res) => {
+    try {
+      const submissions = await prisma.submission.findMany({
+        where: { userId: req.user.id },
+        orderBy: { submittedAt: 'desc' },
+        include: {
+          assignment: {
+            include: {
+              program: {
+                include: {
+                  mentor: { select: mentorPublicSelect },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return res.status(200).json({ submissions });
+    } catch (error) {
+      console.error('List my submissions error:', error);
+      return res.status(500).json({ message: 'Unable to fetch submissions' });
+    }
+  }
+);
+
+app.patch(
+  '/api/submissions/:id/review',
+  authMiddleware,
+  roleMiddleware('MENTOR'),
+  reviewSubmissionValidation,
+  handleValidation,
+  async (req, res) => {
+    try {
+      const existingSubmission = await prisma.submission.findUnique({
+        where: { id: req.params.id },
+        include: {
+          assignment: {
+            include: {
+              program: true,
+            },
+          },
+        },
+      });
+
+      if (!existingSubmission) {
+        return res.status(404).json({ message: 'Submission not found' });
+      }
+
+      if (
+        existingSubmission.assignment.program &&
+        existingSubmission.assignment.program.mentorId !== req.user.id
+      ) {
+        return res
+          .status(403)
+          .json({ message: 'Forbidden: You do not own the program for this assignment' });
+      }
+
+      const { grade, score, feedback, status } = req.body;
+      const finalGrade = grade !== undefined ? grade : score;
+
+      const submission = await prisma.submission.update({
+        where: { id: req.params.id },
+        data: {
+          grade: finalGrade !== undefined ? finalGrade : existingSubmission.grade,
+          feedback: feedback !== undefined ? feedback : existingSubmission.feedback,
+          status: status || 'REVIEWED',
+          reviewedAt: new Date(),
+        },
+        include: {
+          assignment: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+            },
+          },
+        },
+      });
+
+      return res.status(200).json({ submission });
+    } catch (error) {
+      console.error('Review submission error:', error);
+      return res.status(500).json({ message: 'Unable to review submission' });
     }
   }
 );
