@@ -128,9 +128,43 @@ const deleteSession = async (req, res) => {
   }
 };
 
+const attendSession = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    
+    const existingSession = await prisma.session.findUnique({ where: { id } });
+    if (!existingSession) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    if (existingSession.status !== 'SCHEDULED' && existingSession.status !== 'LIVE') {
+      return res.status(400).json({ message: 'Cannot mark attendance for this session right now' });
+    }
+
+    const session = await prisma.session.update({
+      where: { id },
+      data: {
+        attendees: {
+          connect: { id: userId }
+        }
+      },
+      include: {
+        attendees: { select: { id: true, name: true } }
+      }
+    });
+
+    res.status(200).json({ message: 'Attendance marked successfully', session });
+  } catch (error) {
+    console.error('Attend session error:', error);
+    res.status(500).json({ message: 'Failed to mark attendance', error: error.message });
+  }
+};
+
 module.exports = {
   scheduleSession,
   getSessions,
   updateSession,
   deleteSession,
+  attendSession,
 };

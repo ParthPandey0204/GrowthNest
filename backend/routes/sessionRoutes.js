@@ -8,5 +8,6 @@ router.post('/', authMiddleware, roleMiddleware('MENTOR', 'ADMIN'), sessionContr
 router.get('/', authMiddleware, sessionController.getSessions);
 router.put('/:id', authMiddleware, roleMiddleware('MENTOR', 'ADMIN'), sessionController.updateSession);
 router.delete('/:id', authMiddleware, roleMiddleware('MENTOR', 'ADMIN'), sessionController.deleteSession);
+router.post('/:id/attend', authMiddleware, sessionController.attendSession);
 
 module.exports = router;

@@ -7,6 +7,7 @@ const enrollmentRoutes = require('./enrollmentRoutes');
 const assignmentRoutes = require('./assignmentRoutes');
 const submissionRoutes = require('./submissionRoutes');
 const sessionRoutes = require('./sessionRoutes');
+const userRoutes = require('./userRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/programs', programRoutes);
@@ -14,5 +15,6 @@ router.use('/enrollments', enrollmentRoutes);
 router.use('/assignments', assignmentRoutes);
 router.use('/submissions', submissionRoutes);
 router.use('/sessions', sessionRoutes);
+router.use('/users', userRoutes);
 
 module.exports = router;

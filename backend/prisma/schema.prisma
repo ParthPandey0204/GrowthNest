@@ -70,6 +70,7 @@ model User {
   enrollments    Enrollment[]
   submissions    Submission[]
   hostedSessions Session[]        @relation("SessionMentor")
+  attendedSessions Session[]      @relation("SessionAttendees")
   lessonProgress LessonProgress[]
 }
 
@@ -165,6 +166,7 @@ model Session {
   programId  String?
   mentor     User          @relation("SessionMentor", fields: [mentorId], references: [id], onDelete: Cascade)
   program    Program?      @relation(fields: [programId], references: [id], onDelete: SetNull)
+  attendees  User[]        @relation("SessionAttendees")
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
 }
