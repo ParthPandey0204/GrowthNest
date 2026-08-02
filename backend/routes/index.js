@@ -8,6 +8,8 @@ const assignmentRoutes = require('./assignmentRoutes');
 const submissionRoutes = require('./submissionRoutes');
 const sessionRoutes = require('./sessionRoutes');
 const userRoutes = require('./userRoutes');
+const mentorRoutes = require('./mentorRoutes');
+const adminRoutes = require('./adminRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/programs', programRoutes);
@@ -16,5 +18,7 @@ router.use('/assignments', assignmentRoutes);
 router.use('/submissions', submissionRoutes);
 router.use('/sessions', sessionRoutes);
 router.use('/users', userRoutes);
+router.use('/mentor', mentorRoutes);
+router.use('/admin', adminRoutes);
 
 module.exports = router;
