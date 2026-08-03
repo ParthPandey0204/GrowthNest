@@ -37,6 +37,45 @@ const getUsers = async (req, res) => {
   }
 };
 
+const changeUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!['STUDENT', 'MENTOR', 'ADMIN'].includes(role)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: { role },
+    });
+
+    res.status(200).json({ message: 'User role updated successfully', user: updatedUser });
+  } catch (error) {
+    console.error('Change user role error:', error);
+    res.status(500).json({ message: 'Failed to update user role', error: error.message });
+  }
+};
+
+const approveMentor = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const updatedUser = await prisma.user.update({
+      where: { id, role: 'MENTOR' },
+      data: { isApproved: true },
+    });
+
+    res.status(200).json({ message: 'Mentor approved successfully', user: updatedUser });
+  } catch (error) {
+    console.error('Approve mentor error:', error);
+    res.status(500).json({ message: 'Failed to approve mentor', error: error.message });
+  }
+};
+
 module.exports = {
   getUsers,
+  changeUserRole,
+  approveMentor,
 };
