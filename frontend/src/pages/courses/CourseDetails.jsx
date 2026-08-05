@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
-import { getCourseById } from "../../services/course.service";
+import { useMemo } from "react";
+import { useCourse } from "../../services/course.service";
 import contentItems from "../../data/content/ContentData";
 import sessionsData from "../../data/sessions/SessionData";
 import students from "../../data/students/StudentData";
@@ -32,16 +32,7 @@ function formatSessionDate(dateStr) {
 
 function CourseDetails() {
   const { courseId } = useParams();
-  const [course, setCourse] = useState(null);
-
-  useEffect(() => {
-    async function loadCourse() {
-      const data = await getCourseById(courseId);
-      setCourse(data);
-    }
-
-    loadCourse();
-  }, [courseId]);
+  const { data: course, isLoading, isError } = useCourse(courseId);
 
   const courseAssets = useMemo(
     () => contentItems.filter((item) => item.course === course?.title),
@@ -60,7 +51,11 @@ function CourseDetails() {
     [course]
   );
 
-  if (!course) {
+  if (isLoading) {
+    return <div className="animate-pulse rounded-[32px] bg-slate-100 px-6 py-16" />;
+  }
+
+  if (isError || !course) {
     return (
       <div className="rounded-[32px] border border-dashed border-slate-200 bg-white/90 px-6 py-16 text-center text-sm text-slate-500 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
         Course details could not be found.

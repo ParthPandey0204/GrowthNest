@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   BookOpenIcon,
   CheckCircleIcon,
@@ -8,7 +8,11 @@ import {
 } from "@heroicons/react/24/outline";
 
 import StatCard from "../../components/ui/StatCard";
-import { getCourses } from "../../services/course.service";
+import {
+  useCreateCourse,
+  useDeleteCourse,
+  useInfiniteCourses,
+} from "../../services/course.service";
 
 /* ---------- Small UI Components ---------- */
 
@@ -61,22 +65,53 @@ function EmptyState() {
   );
 }
 
+function CourseSkeleton() {
+  return (
+    <section className="overflow-hidden rounded-[30px] border border-slate-200/70 bg-white/92 p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+      <div className="mb-5 h-6 w-40 animate-pulse rounded bg-slate-200" />
+      <div className="space-y-3">
+        {[1, 2, 3, 4].map((item) => (
+          <div key={item} className="grid grid-cols-5 gap-4 border-t border-slate-100 py-5">
+            <div className="col-span-2 h-5 animate-pulse rounded bg-slate-100" />
+            <div className="h-5 animate-pulse rounded bg-slate-100" />
+            <div className="h-5 animate-pulse rounded bg-slate-100" />
+            <div className="h-5 animate-pulse rounded bg-slate-100" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* ---------- Page ---------- */
 
 function Courses() {
-  const [coursesData, setCoursesData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
+  const [newCourseTitle, setNewCourseTitle] = useState("");
+  const {
+    data,
+    error,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+  } = useInfiniteCourses();
+  const createCourse = useCreateCourse();
+  const deleteCourse = useDeleteCourse();
+  const coursesData = useMemo(
+    () => data?.pages.flatMap((page) => page.courses) ?? [],
+    [data]
+  );
 
-  /* Fetch from service instead of data */
-  useEffect(() => {
-    async function loadCourses() {
-      const data = await getCourses();
-      setCoursesData(data);
-      setLoading(false);
-    }
+  const handleCreateCourse = async (event) => {
+    event.preventDefault();
+    if (!newCourseTitle.trim()) return;
 
-    loadCourses();
-  }, []);
+    await createCourse.mutateAsync({ title: newCourseTitle.trim() });
+    setNewCourseTitle("");
+    setIsCreateFormOpen(false);
+  };
 
   /* Derived analytics (backend-ready) */
   const kpis = useMemo(() => {
@@ -128,14 +163,6 @@ function Courses() {
   }, [coursesData]);
 
   /* ---------- Loading State ---------- */
-  if (loading) {
-    return (
-      <div className="rounded-[30px] border border-slate-200/70 bg-white/85 px-6 py-16 text-center text-sm text-slate-500 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
-        Loading courses...
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       <section className="overflow-hidden rounded-[32px] border border-slate-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(244,182,61,0.18),_transparent_28%),linear-gradient(135deg,#ffffff,#f3f7fb)] px-6 py-7 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
@@ -162,12 +189,24 @@ function Courses() {
               </p>
             </div>
 
-            <button className="inline-flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#0C2B4E,#1D546C)] px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-slate-300/60 transition hover:-translate-y-0.5 hover:shadow-xl">
+            <button onClick={() => setIsCreateFormOpen(true)} className="inline-flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#0C2B4E,#1D546C)] px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-slate-300/60 transition hover:-translate-y-0.5 hover:shadow-xl">
               + Create Course
             </button>
           </div>
         </div>
       </section>
+
+      {isCreateFormOpen && (
+        <form onSubmit={handleCreateCourse} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <label className="sr-only" htmlFor="course-title">Course title</label>
+          <input id="course-title" value={newCourseTitle} onChange={(event) => setNewCourseTitle(event.target.value)} placeholder="Course title" className="min-w-56 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm" required />
+          <button type="submit" disabled={createCourse.isPending} className="rounded-xl bg-[#1D546C] px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
+            {createCourse.isPending ? "Creating..." : "Create"}
+          </button>
+          <button type="button" onClick={() => setIsCreateFormOpen(false)} className="px-3 py-2 text-sm text-slate-600">Cancel</button>
+          {createCourse.error && <p className="w-full text-sm text-rose-600">{createCourse.error.message || "Unable to create course."}</p>}
+        </form>
+      )}
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((kpi) => (
@@ -175,7 +214,13 @@ function Courses() {
         ))}
       </div>
 
-      {coursesData.length === 0 ? (
+      {isLoading ? <CourseSkeleton /> : error ? (
+        <div className="rounded-[30px] border border-rose-200 bg-rose-50 px-6 py-10 text-center shadow-sm">
+          <p className="font-medium text-rose-800">Courses could not be loaded.</p>
+          <p className="mt-1 text-sm text-rose-700">{error.message || "Please try again."}</p>
+          <button onClick={() => refetch()} className="mt-4 rounded-xl bg-rose-700 px-4 py-2 text-sm font-medium text-white">Try again</button>
+        </div>
+      ) : coursesData.length === 0 ? (
         <div className="rounded-[30px] border border-slate-200/70 bg-white/90 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
           <EmptyState />
         </div>
@@ -245,6 +290,9 @@ function Courses() {
                     </td>
 
                     <td className="px-6 py-5 text-right">
+                      <button onClick={() => deleteCourse.mutate(course.id)} disabled={deleteCourse.isPending} className="mr-3 text-sm font-medium text-rose-600 disabled:opacity-60">
+                        Archive
+                      </button>
                       <Link
                         to={`/dashboard/courses/${course.id}`}
                         className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-[#1D546C] transition hover:border-[#1D546C] hover:bg-[#1D546C]/5"
@@ -258,6 +306,13 @@ function Courses() {
               </tbody>
             </table>
           </div>
+          {hasNextPage && (
+            <div className="border-t border-slate-100 p-4 text-center">
+              <button onClick={() => fetchNextPage()} disabled={isFetchingNextPage} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60">
+                {isFetchingNextPage ? "Loading..." : "Load more courses"}
+              </button>
+            </div>
+          )}
         </section>
       )}
     </div>
