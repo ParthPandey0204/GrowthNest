@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { UsersIcon, CurrencyDollarIcon, ClockIcon, PlayIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../store/AuthContext";
 import MentorSnapshot from "./MentorSnapshot";
 import ProgressPulse from "../../components/ui/ProgressPulse";
 import GrowthInsight from "../../components/ui/GrowthInsight";
-import stats from "../../data/dashboard/StatsData";
+import { getMentorStats } from "../../api/mentor.api";
 import { progressPulseData } from "../../data/dashboard/ProgressPulseData";
 import StatCard from "../../components/ui/StatCard.jsx";
 
@@ -11,6 +13,13 @@ function Dashboard() {
   const [now, setNow] = useState(new Date());
   const { user } = useAuth();
   const displayName = user?.name || "GrowthNest User";
+  const { data: mentorStats } = useQuery({ queryKey: ["mentor-stats"], queryFn: getMentorStats });
+  const stats = [
+    { title: "Total Learners", value: mentorStats?.stats.totalLearners ?? 0, change: 0, trend: "up", icon: UsersIcon, color: "blue" },
+    { title: "Revenue", value: mentorStats?.stats.revenue ?? 0, change: 0, trend: "up", icon: CurrencyDollarIcon, color: "green" },
+    { title: "Live Sessions", value: mentorStats?.stats.sessionCount ?? 0, change: 0, trend: "up", icon: ClockIcon, color: "orange" },
+    { title: "Avg Completion", value: `${mentorStats?.stats.avgCompletion ?? 0}%`, change: 0, trend: "up", icon: PlayIcon, color: "purple" },
+  ];
   const growthInsightData = {
   insight:
     "Learners who attended 2 or more live sessions completed assignments 37% faster than others.",

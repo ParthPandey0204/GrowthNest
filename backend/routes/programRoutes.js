@@ -27,6 +27,8 @@ router.get('/', listProgramsValidation, handleValidation, programController.list
 
 router.get('/:id', programController.getProgramById);
 
+router.get('/:id/analytics', authMiddleware, programController.getProgramAnalytics);
+
 router.put(
   '/:id',
   authMiddleware,

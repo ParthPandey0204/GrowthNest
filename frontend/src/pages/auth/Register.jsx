@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../store/AuthContext";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { register as registerRequest } from "../../api/auth.api";
 
 function Register() {
   const navigate = useNavigate();
@@ -23,18 +22,7 @@ function Register() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Unable to create account");
-      }
-
-      login(data);
+      login(await registerRequest(formData));
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.message);

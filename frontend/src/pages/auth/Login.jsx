@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../store/AuthContext";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { login as loginRequest } from "../../api/auth.api";
 
 function Login() {
   const navigate = useNavigate();
@@ -23,18 +22,7 @@ function Login() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Unable to log in");
-      }
-
-      login(data);
+      login(await loginRequest(formData));
       navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.message);

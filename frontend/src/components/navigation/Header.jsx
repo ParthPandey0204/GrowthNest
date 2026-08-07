@@ -1,7 +1,16 @@
 import { useAuth } from "../../store/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 function Header({ onMenuToggle }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    logout();
+    queryClient.clear();
+    navigate("/login", { replace: true });
+  };
   const displayName = user?.name || "GrowthNest User";
   const firstName = displayName.trim().split(/\s+/)[0];
   const displayRole = user?.role || "Member";
@@ -102,6 +111,7 @@ function Header({ onMenuToggle }) {
                 {displayRole}
               </p>
             </div>
+            <button type="button" onClick={handleLogout} className="border-l border-white/15 pl-3 text-xs font-semibold text-sky-100 hover:text-white">Logout</button>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { getSessions } from "../../services/session.service";
+import { useState } from "react";
+import { useSessions } from "../../services/session.service";
 
 /* ---------- Helpers ---------- */
 
@@ -57,18 +57,7 @@ function EmptyState({ label }) {
 
 function Sessions() {
   const [tab, setTab] = useState("upcoming");
-  const [sessionsData, setSessionsData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadSessions() {
-      const data = await getSessions();
-      setSessionsData(data);
-      setLoading(false);
-    }
-
-    loadSessions();
-  }, []);
+  const { data: sessionsData = [], isLoading, error, refetch } = useSessions();
 
   const filteredSessions = sessionsData.filter(
     (s) => s.status === tab
@@ -76,12 +65,16 @@ function Sessions() {
 
   const groupedSessions = groupByDate(filteredSessions);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white py-20 text-center text-sm text-gray-500">
         Loading sessions...
       </div>
     );
+  }
+
+  if (error) {
+    return <div className="rounded-xl border border-rose-200 bg-rose-50 py-12 text-center text-sm text-rose-700">Unable to load sessions. <button onClick={() => refetch()} className="font-semibold underline">Try again</button></div>;
   }
 
   return (

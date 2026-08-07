@@ -1,23 +1,32 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import EngagementChart from "../../components/analytics/EngagementChart";
 import RevenueChart from "../../components/analytics/RevenueChart";
 
-import { engagementDataByRange } from "../../data/analytics/engagement";
-import {revenueDataByRange } from "../../data/analytics/revenue";
 import CoursePerformanceChart from "../../components/analytics/CoursePerformanceChart";
 import SessionAnalyticsChart from "../../components/analytics/SessionAnalyticsChart";
-import { coursePerformanceByCourse } from "../../data/analytics/courses";
-import { sessionAnalyticsData } from "../../data/analytics/sessions";
+import { getCourseAnalytics } from "../../api/courses.api";
+import { useCourses } from "../../services/course.service";
 
 const TIME_RANGES = ["7 Days", "30 Days", "90 Days"];
 
 function Analytics() {
   const [timeRange, setTimeRange] = useState("30 Days");
-  const [course, setCourse] = useState("All Courses");
-  const engagementData = engagementDataByRange[timeRange];
-  const revenueData = revenueDataByRange[timeRange];
-  const courseData = coursePerformanceByCourse[course];
+  const [courseId, setCourseId] = useState("");
+  const { data: coursesResponse } = useCourses();
+  const courses = coursesResponse?.courses ?? [];
+  const selectedCourseId = courseId || courses[0]?.id;
+  const range = Number(timeRange.split(" ")[0]);
+  const { data: analytics } = useQuery({
+    queryKey: ["course-analytics", selectedCourseId, range],
+    queryFn: () => getCourseAnalytics(selectedCourseId, range),
+    enabled: Boolean(selectedCourseId),
+  });
+  const engagementData = analytics?.engagement ?? [];
+  const revenueData = analytics?.revenue ?? [];
+  const courseData = analytics?.coursePerformance ?? [];
+  const sessionAnalyticsData = analytics?.sessions ?? [];
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-2">
@@ -42,14 +51,12 @@ function Analytics() {
         </div>
 
         <select
-          value={course}
-          onChange={(e) => setCourse(e.target.value)}
+          value={selectedCourseId || ""}
+          onChange={(e) => setCourseId(e.target.value)}
           className="rounded-lg border px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1D546C]/40"
         >
-          <option>All Courses</option>
-          <option>DSA Mastery</option>
-          <option>Full Stack Bootcamp</option>
-          <option>System Design Basics</option>
+          <option value="" disabled>Select a course</option>
+          {courses.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
         </select>
       </div>
 

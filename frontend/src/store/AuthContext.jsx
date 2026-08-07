@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const AUTH_STORAGE_KEY = "growthnest_auth";
 
@@ -37,6 +37,12 @@ export function AuthProvider({ children }) {
     window.localStorage.removeItem(AUTH_STORAGE_KEY);
     setAuth({ token: null, user: null });
   };
+
+  useEffect(() => {
+    const handleUnauthorized = () => setAuth({ token: null, user: null });
+    window.addEventListener("growthnest:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("growthnest:unauthorized", handleUnauthorized);
+  }, []);
 
   const value = useMemo(
     () => ({
