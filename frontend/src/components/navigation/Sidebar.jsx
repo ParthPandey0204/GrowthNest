@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../store/AuthContext";
 
 const Icon = ({ children }) => (
   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/8 bg-white/6 text-white transition">
@@ -7,6 +8,7 @@ const Icon = ({ children }) => (
 );
 
 function Sidebar({ isOpen, onClose }) {
+  const { user } = useAuth();
   const menuSections = [
     {
       title: "Overview",
@@ -90,6 +92,13 @@ function Sidebar({ isOpen, onClose }) {
     },
   ];
 
+  if (user?.role === "STUDENT") {
+    menuSections[0].items = [
+      { label: "My Learning", path: "/student/dashboard", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 5.5 12 3l8 2.5v13L12 21l-8-2.5v-13Z" /><path d="M12 7v14" /></svg> },
+      { label: "Browse Programs", path: "/programs", icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h10" /></svg> },
+    ];
+  }
+
   return (
     <>
       {/* Mobile overlay */}
@@ -118,7 +127,7 @@ function Sidebar({ isOpen, onClose }) {
                   Workspace
                 </p>
                 <h2 className="mt-1 text-lg font-semibold text-white">
-                  Mentor Console
+                  {user?.role === "STUDENT" ? "Learning Console" : "Mentor Console"}
                 </h2>
               </div>
 

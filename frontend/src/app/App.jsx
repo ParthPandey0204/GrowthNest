@@ -12,6 +12,9 @@ import Messages from "../pages/messages/Messages";
 import Sessions from "../pages/sessions/Sessions";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
+import Programs from "../pages/programs/Programs";
+import ProgramDetails from "../pages/programs/ProgramDetails";
+import StudentDashboard from "../pages/student/StudentDashboard";
 
 function App() {
   return (
@@ -38,6 +41,9 @@ function App() {
         />
         <Route path="/dashboard/messages" element={<Messages />} />
         <Route path="/dashboard/sessions" element={<Sessions />} />
+        <Route path="/programs" element={<Programs />} />
+        <Route path="/programs/:id" element={<ProgramDetails />} />
+        <Route path="/student/dashboard" element={<ProtectedRoute role="STUDENT"><StudentDashboard /></ProtectedRoute>} />
       </Route>
     </Routes>
   );
