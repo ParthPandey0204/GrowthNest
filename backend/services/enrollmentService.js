@@ -138,9 +138,83 @@ const updateEnrollmentProgress = async (id, userId, progress) => {
   });
 };
 
+const updateLessonProgress = async (userId, lessonId, status, progress) => {
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: lessonId },
+    include: { program: { include: { lessons: true } } }
+  });
+
+  if (!lesson) {
+    const error = new Error('Lesson not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { userId_programId: { userId, programId: lesson.programId } }
+  });
+
+  if (!enrollment) {
+    const error = new Error('Forbidden: You are not enrolled in this program');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const updateData = {
+    status,
+    progress
+  };
+
+  if (status === 'COMPLETED') {
+    updateData.completedAt = new Date();
+    updateData.progress = 100;
+  }
+
+  const lessonProgress = await prisma.lessonProgress.upsert({
+    where: { userId_lessonId: { userId, lessonId } },
+    update: updateData,
+    create: {
+      userId,
+      lessonId,
+      ...updateData
+    }
+  });
+
+  // Calculate new overall enrollment progress
+  const totalLessons = lesson.program.lessons.length;
+  const allCompletedLessons = await prisma.lessonProgress.count({
+    where: {
+      userId,
+      lessonId: { in: lesson.program.lessons.map(l => l.id) },
+      status: 'COMPLETED'
+    }
+  });
+
+  const overallProgress = totalLessons > 0 ? Math.round((allCompletedLessons / totalLessons) * 100) : 0;
+  
+  await updateEnrollmentProgress(enrollment.id, userId, overallProgress);
+
+  return lessonProgress;
+};
+
+const getLessonProgressForProgram = async (userId, programId) => {
+  const enrollment = await prisma.enrollment.findUnique({ where: { userId_programId: { userId, programId } } });
+  if (!enrollment) {
+    const error = new Error('Forbidden: You are not enrolled in this program');
+    error.statusCode = 403;
+    throw error;
+  }
+  return prisma.lessonProgress.findMany({
+    where: { userId, lesson: { programId } },
+    select: { lessonId: true, status: true, progress: true, completedAt: true },
+  });
+};
+
 module.exports = {
   createEnrollment,
   getStudentEnrollments,
   getProgramEnrollmentsForMentor,
   updateEnrollmentProgress,
+  updateLessonProgress,
+  getLessonProgressForProgram,
 };

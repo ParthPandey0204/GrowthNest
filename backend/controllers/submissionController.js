@@ -9,6 +9,9 @@ const submitAssignment = async (req, res) => {
     return res.status(201).json({ submission });
   } catch (error) {
     console.error('Submit assignment error:', error);
+    if (error.code === 'LIMIT_FILE_SIZE' || error.message === 'Only PDF and ZIP files are allowed') {
+      return res.status(400).json({ message: error.message === 'Only PDF and ZIP files are allowed' ? error.message : 'File size must not exceed 10 MB' });
+    }
     if (error.statusCode) {
       return res.status(error.statusCode).json({ message: error.message });
     }

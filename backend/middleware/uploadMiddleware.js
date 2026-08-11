@@ -15,7 +15,18 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+const allowedExtensions = new Set(['.pdf', '.zip']);
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (allowedExtensions.has(path.extname(file.originalname).toLowerCase())) {
+      return cb(null, true);
+    }
+    return cb(new Error('Only PDF and ZIP files are allowed'));
+  },
+});
 
 module.exports = {
   upload,

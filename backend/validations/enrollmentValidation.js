@@ -14,7 +14,14 @@ const updateProgressValidation = [
     .toInt(),
 ];
 
+const updateLessonProgressValidation = [
+  body('lessonId').trim().notEmpty().withMessage('Lesson ID is required'),
+  body('status').isIn(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED']).withMessage('Invalid lesson status'),
+  body('progress').optional().isInt({ min: 0, max: 100 }).toInt(),
+];
+
 module.exports = {
   createEnrollmentValidation,
   updateProgressValidation,
+  updateLessonProgressValidation,
 };

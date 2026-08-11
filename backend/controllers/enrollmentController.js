@@ -60,9 +60,39 @@ const updateProgress = async (req, res) => {
   }
 };
 
+const updateLessonProgress = async (req, res) => {
+  try {
+    const lessonProgress = await enrollmentService.updateLessonProgress(
+      req.user.id,
+      req.body.lessonId,
+      req.body.status,
+      req.body.progress
+    );
+    return res.status(200).json({ lessonProgress });
+  } catch (error) {
+    console.error('Update lesson progress error:', error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    return res.status(500).json({ message: 'Unable to update lesson progress' });
+  }
+};
+
+const getLessonProgress = async (req, res) => {
+  try {
+    const lessonProgress = await enrollmentService.getLessonProgressForProgram(req.user.id, req.params.programId);
+    return res.status(200).json({ lessonProgress });
+  } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+    return res.status(500).json({ message: 'Unable to fetch lesson progress' });
+  }
+};
+
 module.exports = {
   createEnrollment,
   getMyEnrollments,
   getProgramEnrollments,
   updateProgress,
+  updateLessonProgress,
+  getLessonProgress,
 };

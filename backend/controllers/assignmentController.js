@@ -26,7 +26,18 @@ const listAssignments = async (req, res) => {
   }
 };
 
+const getMyAssignments = async (req, res) => {
+  try {
+    const assignments = await assignmentService.getStudentAssignments(req.user.id);
+    return res.status(200).json({ assignments });
+  } catch (error) {
+    console.error('List my assignments error:', error);
+    return res.status(500).json({ message: 'Unable to fetch assignments' });
+  }
+};
+
 module.exports = {
   createAssignment,
   listAssignments,
+  getMyAssignments,
 };

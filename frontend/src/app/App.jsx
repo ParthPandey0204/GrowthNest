@@ -14,6 +14,7 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import Programs from "../pages/programs/Programs";
 import ProgramDetails from "../pages/programs/ProgramDetails";
+import LessonView from "../pages/programs/LessonView";
 import StudentDashboard from "../pages/student/StudentDashboard";
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
         <Route path="/dashboard/sessions" element={<Sessions />} />
         <Route path="/programs" element={<Programs />} />
         <Route path="/programs/:id" element={<ProgramDetails />} />
+        <Route path="/programs/:id/lessons/:lessonId" element={<LessonView />} />
         <Route path="/student/dashboard" element={<ProtectedRoute role="STUDENT"><StudentDashboard /></ProtectedRoute>} />
       </Route>
     </Routes>

@@ -29,6 +29,13 @@ router.get(
 );
 
 router.get(
+  '/me',
+  authMiddleware,
+  roleMiddleware('STUDENT'),
+  assignmentController.getMyAssignments
+);
+
+router.get(
   '/:id/submissions',
   authMiddleware,
   roleMiddleware('MENTOR'),

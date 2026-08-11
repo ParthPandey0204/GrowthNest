@@ -52,7 +52,29 @@ const listAssignments = async (programId) => {
   });
 };
 
+const getStudentAssignments = async (userId) => {
+  const enrollments = await prisma.enrollment.findMany({
+    where: { userId },
+    select: { programId: true }
+  });
+
+  const programIds = enrollments.map(e => e.programId);
+
+  return await prisma.assignment.findMany({
+    where: { programId: { in: programIds }, status: 'PUBLISHED' },
+    include: {
+      program: { select: { title: true } },
+      submissions: {
+        where: { userId },
+        select: { id: true, status: true, grade: true }
+      }
+    },
+    orderBy: { dueAt: 'asc' },
+  });
+};
+
 module.exports = {
   createAssignment,
   listAssignments,
+  getStudentAssignments,
 };

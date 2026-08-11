@@ -7,6 +7,7 @@ const handleValidation = require('../middleware/validationMiddleware');
 const {
   createEnrollmentValidation,
   updateProgressValidation,
+  updateLessonProgressValidation,
 } = require('../validations/enrollmentValidation');
 
 router.post(
@@ -33,5 +34,16 @@ router.patch(
   handleValidation,
   enrollmentController.updateProgress
 );
+
+router.patch(
+  '/lesson-progress',
+  authMiddleware,
+  roleMiddleware('STUDENT'),
+  updateLessonProgressValidation,
+  handleValidation,
+  enrollmentController.updateLessonProgress
+);
+
+router.get('/lesson-progress/:programId', authMiddleware, roleMiddleware('STUDENT'), enrollmentController.getLessonProgress);
 
 module.exports = router;

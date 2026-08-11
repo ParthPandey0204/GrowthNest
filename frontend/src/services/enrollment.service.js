@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createEnrollment, getMyEnrollments } from "../api/enrollments.api";
+import { createEnrollment, getLessonProgress, getMyEnrollments, updateLessonProgress } from "../api/enrollments.api";
 
 export const myEnrollmentsQueryKey = ["my-enrollments"];
 
@@ -29,5 +29,25 @@ export function useEnrollProgram() {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: myEnrollmentsQueryKey }),
     onSettled: () => queryClient.invalidateQueries({ queryKey: myEnrollmentsQueryKey }),
+  });
+}
+
+export function useUpdateLessonProgress() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: updateLessonProgress,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: myEnrollmentsQueryKey });
+      queryClient.invalidateQueries({ queryKey: ["lesson-progress"] });
+    }
+  });
+}
+
+export function useLessonProgress(programId) {
+  return useQuery({
+    queryKey: ["lesson-progress", programId],
+    queryFn: async () => (await getLessonProgress(programId)).lessonProgress,
+    enabled: Boolean(programId),
   });
 }
