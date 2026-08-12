@@ -26,6 +26,8 @@ router.get(
   enrollmentController.getMyEnrollments
 );
 
+router.get('/me/progress-summary', authMiddleware, roleMiddleware('STUDENT'), enrollmentController.getProgressSummary);
+
 router.patch(
   '/:id/progress',
   authMiddleware,

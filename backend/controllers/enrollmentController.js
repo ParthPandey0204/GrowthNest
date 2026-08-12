@@ -88,6 +88,14 @@ const getLessonProgress = async (req, res) => {
   }
 };
 
+const getProgressSummary = async (req, res) => {
+  try {
+    return res.status(200).json(await enrollmentService.getStudentProgressSummary(req.user.id));
+  } catch (error) {
+    return res.status(500).json({ message: 'Unable to fetch progress summary' });
+  }
+};
+
 module.exports = {
   createEnrollment,
   getMyEnrollments,
@@ -95,4 +103,5 @@ module.exports = {
   updateProgress,
   updateLessonProgress,
   getLessonProgress,
+  getProgressSummary,
 };

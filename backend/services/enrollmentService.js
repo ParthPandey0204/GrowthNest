@@ -210,6 +210,33 @@ const getLessonProgressForProgram = async (userId, programId) => {
   });
 };
 
+const getStudentProgressSummary = async (userId) => {
+  const [enrollments, assignments, submissions, attendedSessions, lessonProgress] = await Promise.all([
+    prisma.enrollment.findMany({ where: { userId }, include: { program: { select: { id: true, title: true } } } }),
+    prisma.assignment.findMany({ where: { status: 'PUBLISHED', program: { enrollments: { some: { userId } } } }, select: { id: true } }),
+    prisma.submission.findMany({ where: { userId }, select: { id: true, assignmentId: true, grade: true, status: true, submittedAt: true, feedback: true, assignment: { select: { title: true } } } }),
+    prisma.session.findMany({ where: { attendees: { some: { id: userId } } }, select: { id: true, title: true, startsAt: true } }),
+    prisma.lessonProgress.findMany({ where: { userId, status: 'COMPLETED' }, select: { lessonId: true, completedAt: true, lesson: { select: { title: true, programId: true } } }, orderBy: { updatedAt: 'desc' } }),
+  ]);
+  const submittedAssignmentIds = new Set(submissions.map((submission) => submission.assignmentId));
+  const reviewed = submissions.filter((submission) => submission.status === 'REVIEWED' && submission.grade != null);
+  const recentActivity = [
+    ...lessonProgress.map((item) => ({ type: 'lesson', title: `Completed lesson: ${item.lesson.title}`, at: item.completedAt })),
+    ...submissions.map((item) => ({ type: 'assignment', title: `Submitted assignment: ${item.assignment.title}`, at: item.submittedAt })),
+  ].filter((item) => item.at).sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 5);
+  return {
+    programs: enrollments.map((enrollment) => ({ id: enrollment.programId, title: enrollment.program.title, progress: enrollment.progress })),
+    metrics: {
+      assignmentCompletionRate: assignments.length ? Math.round((submittedAssignmentIds.size / assignments.length) * 100) : 0,
+      averageScore: reviewed.length ? Math.round(reviewed.reduce((sum, submission) => sum + submission.grade, 0) / reviewed.length) : null,
+      sessionAttendance: attendedSessions.length,
+      assignmentsSubmitted: submittedAssignmentIds.size,
+      assignmentsTotal: assignments.length,
+    },
+    recentActivity,
+  };
+};
+
 module.exports = {
   createEnrollment,
   getStudentEnrollments,
@@ -217,4 +244,5 @@ module.exports = {
   updateEnrollmentProgress,
   updateLessonProgress,
   getLessonProgressForProgram,
+  getStudentProgressSummary,
 };

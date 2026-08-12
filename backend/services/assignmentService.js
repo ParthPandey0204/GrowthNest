@@ -66,7 +66,7 @@ const getStudentAssignments = async (userId) => {
       program: { select: { title: true } },
       submissions: {
         where: { userId },
-        select: { id: true, status: true, grade: true }
+        select: { id: true, status: true, grade: true, feedback: true, submittedAt: true, reviewedAt: true }
       }
     },
     orderBy: { dueAt: 'asc' },

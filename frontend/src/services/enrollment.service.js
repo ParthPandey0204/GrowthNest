@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createEnrollment, getLessonProgress, getMyEnrollments, updateLessonProgress } from "../api/enrollments.api";
+import { createEnrollment, getLessonProgress, getMyEnrollments, getProgressSummary, updateLessonProgress } from "../api/enrollments.api";
 
 export const myEnrollmentsQueryKey = ["my-enrollments"];
 
@@ -50,4 +50,8 @@ export function useLessonProgress(programId) {
     queryFn: async () => (await getLessonProgress(programId)).lessonProgress,
     enabled: Boolean(programId),
   });
+}
+
+export function useStudentProgressSummary() {
+  return useQuery({ queryKey: ["student-progress-summary"], queryFn: getProgressSummary });
 }
