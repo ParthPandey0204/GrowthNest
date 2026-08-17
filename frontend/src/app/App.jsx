@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
+import AdminLayout from "../layouts/AdminLayout";
+import UserManagement from "../pages/admin/UserManagement";
 
 // Pages
 import Dashboard from "../pages/dashboard/Dashboard";
@@ -46,6 +48,18 @@ function App() {
         <Route path="/programs/:id" element={<ProgramDetails />} />
         <Route path="/programs/:id/lessons/:lessonId" element={<LessonView />} />
         <Route path="/student/dashboard" element={<ProtectedRoute role="STUDENT"><StudentDashboard /></ProtectedRoute>} />
+      </Route>
+
+      {/* Admin Routes */}
+      <Route
+        element={
+          <ProtectedRoute role="ADMIN">
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
+        <Route path="/admin/users" element={<UserManagement />} />
       </Route>
     </Routes>
   );

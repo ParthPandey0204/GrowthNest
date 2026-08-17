@@ -14,7 +14,6 @@ router.post(
   '/',
   authMiddleware,
   roleMiddleware('STUDENT'),
-  upload.single('file'),
   createSubmissionValidation,
   handleValidation,
   submissionController.submitAssignment

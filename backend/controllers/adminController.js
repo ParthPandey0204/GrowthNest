@@ -5,9 +5,20 @@ const getUsers = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const search = req.query.search || '';
+    const roleFilter = req.query.role || undefined;
+
+    const where = {
+      ...(roleFilter && { role: roleFilter }),
+      OR: [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ],
+    };
 
     const [users, total] = await Promise.all([
       prisma.user.findMany({
+        where,
         skip,
         take: limit,
         select: {
@@ -15,11 +26,12 @@ const getUsers = async (req, res) => {
           name: true,
           email: true,
           role: true,
+          isActive: true,
           createdAt: true,
         },
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.user.count()
+      prisma.user.count({ where })
     ]);
 
     res.status(200).json({
@@ -74,8 +86,26 @@ const approveMentor = async (req, res) => {
   }
 };
 
+const toggleUserStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: { isActive },
+    });
+
+    res.status(200).json({ message: `User ${isActive ? 'activated' : 'suspended'} successfully`, user: updatedUser });
+  } catch (error) {
+    console.error('Toggle user status error:', error);
+    res.status(500).json({ message: 'Failed to update user status', error: error.message });
+  }
+};
+
 module.exports = {
   getUsers,
   changeUserRole,
   approveMentor,
+  toggleUserStatus,
 };

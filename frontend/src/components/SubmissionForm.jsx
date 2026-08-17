@@ -7,7 +7,9 @@ export default function SubmissionForm({ assignmentId, onSubmitted }) {
   const [content, setContent] = useState("");
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
+  const [progress, setProgress] = useState(0);
   const queryClient = useQueryClient();
+  
   const submitMutation = useMutation({
     mutationFn: createSubmission,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: myAssignmentsQueryKey }),
@@ -21,6 +23,7 @@ export default function SubmissionForm({ assignmentId, onSubmitted }) {
     }
     
     setError("");
+    setProgress(0);
 
     try {
       const formData = new FormData();
@@ -28,13 +31,21 @@ export default function SubmissionForm({ assignmentId, onSubmitted }) {
       if (content) formData.append("content", content);
       if (file) formData.append("file", file);
 
-      await submitMutation.mutateAsync(formData);
+      await submitMutation.mutateAsync({
+        formData,
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setProgress(percentCompleted);
+        }
+      });
       
       setContent("");
       setFile(null);
+      setProgress(0);
       if (onSubmitted) onSubmitted();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to submit assignment.");
+      setProgress(0);
     }
   };
 
@@ -70,6 +81,21 @@ export default function SubmissionForm({ assignmentId, onSubmitted }) {
           onChange={(e) => setFile(e.target.files[0])}
         />
       </div>
+
+      {submitMutation.isPending && progress > 0 && (
+        <div className="mb-4">
+          <div className="flex justify-between text-xs text-slate-500 mb-1">
+            <span>Uploading...</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="w-full bg-slate-200 rounded-full h-2">
+            <div
+              className="bg-[#0C2B4E] h-2 rounded-full transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
 
       <button
         type="submit"
