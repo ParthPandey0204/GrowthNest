@@ -15,7 +15,7 @@ const createAssignment = async (req, res) => {
 
 const listAssignments = async (req, res) => {
   try {
-    const assignments = await assignmentService.listAssignments(req.query.programId);
+    const assignments = await assignmentService.listAssignments(req.query.programId, req.user);
     return res.status(200).json({ assignments });
   } catch (error) {
     console.error('List assignments error:', error);

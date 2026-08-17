@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import taskSeed from "../../data/tasks/TaskData";
+import { getTasks } from "../../services/task.service";
 import { getSessions } from "../../services/session.service";
 
 function Calendar() {
   const [mode, setMode] = useState("Week");
   const [sessions, setSessions] = useState([]);
+  const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
     async function loadSessions() {
@@ -13,6 +14,7 @@ function Calendar() {
     }
 
     loadSessions();
+    getTasks().then(setTasks).catch(() => setTasks([]));
   }, []);
 
   const timelineItems = useMemo(() => {
@@ -24,7 +26,7 @@ function Calendar() {
       type: "Session",
     }));
 
-    const taskItems = taskSeed.map((task) => ({
+    const taskItems = tasks.map((task) => ({
       id: task.id,
       title: task.title,
       subtitle: task.course,
@@ -33,7 +35,7 @@ function Calendar() {
     }));
 
     return [...sessionItems, ...taskItems].sort((a, b) => a.date.localeCompare(b.date));
-  }, [sessions]);
+  }, [sessions, tasks]);
 
   return (
     <div className="space-y-6">

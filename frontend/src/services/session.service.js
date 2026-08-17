@@ -12,6 +12,7 @@ const normalizeSession = (session) => ({
 });
 
 export const fetchSessions = async () => (await getSessionsRequest()).map(normalizeSession);
+export const getSessions = fetchSessions;
 
 export function useSessions() {
   return useQuery({ queryKey: ["sessions"], queryFn: fetchSessions });

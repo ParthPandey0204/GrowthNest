@@ -3,7 +3,7 @@ import api from "../api/axios";
 
 export default function CreateLessonForm({ programId, onCreated }) {
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [content, setContent] = useState("");
   const [type, setType] = useState("VIDEO");
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -51,7 +51,7 @@ export default function CreateLessonForm({ programId, onCreated }) {
       // Create lesson first
       const { data } = await api.post(`/api/programs/${programId}/lessons`, {
         title,
-        description,
+        content,
         type,
       });
 
@@ -73,7 +73,7 @@ export default function CreateLessonForm({ programId, onCreated }) {
       }
       
       setTitle("");
-      setDescription("");
+      setContent("");
       setFile(null);
       setProgress(0);
       setIsSubmitting(false);
@@ -115,6 +115,13 @@ export default function CreateLessonForm({ programId, onCreated }) {
             <option value="ASSIGNMENT">Assignment</option>
           </select>
         </div>
+
+        {type !== "VIDEO" && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Content</label>
+            <textarea required rows="5" className="w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-[#0C2B4E] focus:outline-none focus:ring-1 focus:ring-[#0C2B4E]" value={content} onChange={(e) => setContent(e.target.value)} placeholder={type === "ARTICLE" ? "Write the lesson content or add a resource URL" : "Describe the assignment"} />
+          </div>
+        )}
 
         {type === "VIDEO" && (
           <div>
