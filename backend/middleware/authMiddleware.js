@@ -22,6 +22,14 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid authentication token' });
     }
 
+    if (!user.isActive) {
+      return res.status(403).json({ message: 'This account has been suspended' });
+    }
+
+    if (user.role === 'MENTOR' && !user.isApproved) {
+      return res.status(403).json({ message: 'Your mentor account is pending administrator approval' });
+    }
+
     req.user = user;
     return next();
   } catch (error) {

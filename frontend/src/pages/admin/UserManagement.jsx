@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUsers, changeUserRole, toggleUserStatus, approveMentor } from "../../api/admin.api";
 
 export default function UserManagement() {
@@ -13,22 +13,22 @@ export default function UserManagement() {
   const { data, isLoading } = useQuery({
     queryKey: ["adminUsers", page, search, roleFilter],
     queryFn: () => getUsers({ page, limit, search, role: roleFilter }),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   const roleMutation = useMutation({
     mutationFn: ({ id, role }) => changeUserRole(id, { role }),
-    onSuccess: () => queryClient.invalidateQueries(["adminUsers"]),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminUsers"] }),
   });
 
   const statusMutation = useMutation({
     mutationFn: ({ id, isActive }) => toggleUserStatus(id, { isActive }),
-    onSuccess: () => queryClient.invalidateQueries(["adminUsers"]),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminUsers"] }),
   });
 
   const approveMutation = useMutation({
     mutationFn: (id) => approveMentor(id),
-    onSuccess: () => queryClient.invalidateQueries(["adminUsers"]),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["adminUsers"] }),
   });
 
   return (
@@ -76,7 +76,7 @@ export default function UserManagement() {
               <tr>
                 <td colSpan="5" className="px-6 py-8 text-center text-slate-500">Loading users...</td>
               </tr>
-            ) : data?.users.length === 0 ? (
+            ) : data?.users?.length === 0 ? (
               <tr>
                 <td colSpan="5" className="px-6 py-8 text-center text-slate-500">No users found.</td>
               </tr>
@@ -136,6 +136,12 @@ export default function UserManagement() {
           </tbody>
         </table>
       </div>
+
+      {roleMutation.error || statusMutation.error || approveMutation.error ? (
+        <p className="border-t border-rose-100 bg-rose-50 px-6 py-3 text-sm text-rose-700">
+          {roleMutation.error?.response?.data?.message || statusMutation.error?.response?.data?.message || approveMutation.error?.response?.data?.message || "Unable to update this user. Please try again."}
+        </p>
+      ) : null}
 
       {data?.pagination && data.pagination.totalPages > 1 && (
         <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">

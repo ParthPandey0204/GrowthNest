@@ -9,6 +9,7 @@ function Register() {
   const { login } = useAuth();
   const [formData, setFormData] = useState({ name: "", email: "", password: "", role: "STUDENT" });
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (event) => {
@@ -19,11 +20,17 @@ function Register() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+    setNotice("");
     setIsSubmitting(true);
 
     try {
-      login(await registerRequest(formData));
-      navigate("/dashboard", { replace: true });
+      const result = await registerRequest(formData);
+      if (result.token) {
+        login(result);
+        navigate("/dashboard", { replace: true });
+      } else {
+        setNotice(result.message || "Your account was created. You can sign in once it is approved.");
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -96,10 +103,14 @@ function Register() {
           <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
         )}
 
+        {notice && (
+          <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</p>
+        )}
+
         <button
           className="w-full rounded-md bg-emerald-700 px-4 py-2 font-medium text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-400"
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || Boolean(notice)}
         >
           {isSubmitting ? "Creating account..." : "Create account"}
         </button>

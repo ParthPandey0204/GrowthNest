@@ -9,4 +9,12 @@ router.patch('/users/:id/role', authMiddleware, roleMiddleware('ADMIN'), adminCo
 router.patch('/users/:id/status', authMiddleware, roleMiddleware('ADMIN'), adminController.toggleUserStatus);
 router.patch('/mentors/:id/approve', authMiddleware, roleMiddleware('ADMIN'), adminController.approveMentor);
 
+// Analytics Routes
+router.get('/analytics/dashboard', authMiddleware, roleMiddleware('ADMIN'), adminController.getDashboardStats);
+router.get('/analytics/activity', authMiddleware, roleMiddleware('ADMIN'), adminController.getActivityLog);
+
+// Program Moderation Routes
+router.get('/programs', authMiddleware, roleMiddleware('ADMIN'), adminController.getPrograms);
+router.patch('/programs/:id/status', authMiddleware, roleMiddleware('ADMIN'), adminController.updateProgramStatus);
+
 module.exports = router;

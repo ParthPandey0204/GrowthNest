@@ -14,6 +14,18 @@ export default function AdminLayout() {
 
         <nav className="flex-1 px-4 space-y-2">
           <NavLink
+            to="/admin/dashboard"
+            className={({ isActive }) =>
+              `flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-white/10 text-white"
+                  : "text-slate-300 hover:bg-white/5 hover:text-white"
+              }`
+            }
+          >
+            Dashboard
+          </NavLink>
+          <NavLink
             to="/admin/users"
             className={({ isActive }) =>
               `flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
@@ -24,6 +36,18 @@ export default function AdminLayout() {
             }
           >
             User Management
+          </NavLink>
+          <NavLink
+            to="/admin/programs"
+            className={({ isActive }) =>
+              `flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-white/10 text-white"
+                  : "text-slate-300 hover:bg-white/5 hover:text-white"
+              }`
+            }
+          >
+            Program Moderation
           </NavLink>
         </nav>
 

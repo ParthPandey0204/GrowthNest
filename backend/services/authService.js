@@ -39,8 +39,16 @@ const registerUser = async ({ name, email, password, role }) => {
       email,
       password: hashedPassword,
       role: role || 'STUDENT',
+      isApproved: role === 'MENTOR' ? false : true,
     },
   });
+
+  if (user.role === 'MENTOR') {
+    return {
+      user: sanitizeUser(user),
+      message: 'Your mentor account is pending administrator approval.',
+    };
+  }
 
   const token = signToken(user);
   return { token, user: sanitizeUser(user) };
@@ -60,6 +68,18 @@ const loginUser = async ({ email, password }) => {
   if (!isPasswordValid) {
     const error = new Error('Invalid email or password');
     error.statusCode = 401;
+    throw error;
+  }
+
+  if (!user.isActive) {
+    const error = new Error('This account has been suspended');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (user.role === 'MENTOR' && !user.isApproved) {
+    const error = new Error('Your mentor account is pending administrator approval');
+    error.statusCode = 403;
     throw error;
   }
 

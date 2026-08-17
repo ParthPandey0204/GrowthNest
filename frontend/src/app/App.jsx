@@ -4,9 +4,12 @@ import AuthLayout from "../layouts/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminLayout from "../layouts/AdminLayout";
 import UserManagement from "../pages/admin/UserManagement";
+import AdminDashboard from "../pages/admin/AdminDashboard";
+import ProgramModeration from "../pages/admin/ProgramModeration";
 
 // Pages
 import Dashboard from "../pages/dashboard/Dashboard";
+import MentorSnapshot from "../pages/dashboard/MentorSnapshot";
 import Analytics from "../pages/analytics/Analytics";
 import CourseDetails from "../pages/courses/CourseDetails";
 import Courses from "../pages/courses/Courses";
@@ -16,6 +19,7 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import Programs from "../pages/programs/Programs";
 import ProgramDetails from "../pages/programs/ProgramDetails";
+import Settings from "../pages/settings/Settings";
 import LessonView from "../pages/programs/LessonView";
 import StudentDashboard from "../pages/student/StudentDashboard";
 
@@ -44,6 +48,9 @@ function App() {
         />
         <Route path="/dashboard/messages" element={<Messages />} />
         <Route path="/dashboard/sessions" element={<Sessions />} />
+        <Route path="/snapshot" element={<ProtectedRoute role="MENTOR"><MentorSnapshot /></ProtectedRoute>} />
+        <Route path="/settings" element={<Settings />} />
+        
         <Route path="/programs" element={<Programs />} />
         <Route path="/programs/:id" element={<ProgramDetails />} />
         <Route path="/programs/:id/lessons/:lessonId" element={<LessonView />} />
@@ -58,8 +65,10 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<UserManagement />} />
+        <Route path="/admin/programs" element={<ProgramModeration />} />
       </Route>
     </Routes>
   );

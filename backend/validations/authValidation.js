@@ -1,6 +1,6 @@
 const { body } = require('express-validator');
 
-const validRoles = ['ADMIN', 'MENTOR', 'STUDENT'];
+const validRoles = ['MENTOR', 'STUDENT'];
 
 const registerValidation = [
   body('name')
