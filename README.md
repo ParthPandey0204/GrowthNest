@@ -24,7 +24,8 @@ npx prisma db push
 npm start
 ```
 
-In a second terminal, start the frontend:
+In a second terminal, copy `frontend/.env.example` to `frontend/.env`, set
+`VITE_API_URL` to the API URL, then start the frontend:
 
 ```bash
 cd frontend

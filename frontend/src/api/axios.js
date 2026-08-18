@@ -1,7 +1,15 @@
 import axios from 'axios';
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
+if (!apiUrl) {
+  throw new Error(
+    '[GrowthNest] VITE_API_URL is not set. Add it to frontend/.env locally or to your hosting environment variables.'
+  );
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  baseURL: apiUrl,
   headers: {
     'Content-Type': 'application/json',
   },
