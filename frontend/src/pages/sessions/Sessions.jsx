@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSessions } from "../../services/session.service";
+import { useAuth } from "../../store/AuthContext";
 
 /* ---------- Helpers ---------- */
 
@@ -57,6 +58,7 @@ function EmptyState({ label }) {
 
 function Sessions() {
   const [tab, setTab] = useState("upcoming");
+  const { user } = useAuth();
   const { data: sessionsData = [], isLoading, error, refetch } = useSessions();
 
   const filteredSessions = sessionsData.filter(
@@ -85,14 +87,10 @@ function Sessions() {
           <h1 className="text-2xl font-semibold text-gray-900">
             Sessions
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            View and manage your mentoring sessions
-          </p>
+          <p className="mt-1 text-sm text-gray-500">{user?.role === "STUDENT" ? "View your upcoming learning sessions" : "View and manage your mentoring sessions"}</p>
         </div>
 
-        <button className="rounded-lg bg-[#0C2B4E] px-4 py-2 text-sm font-medium text-white hover:bg-[#143D6B] transition">
-          + Schedule Session
-        </button>
+        {user?.role !== "STUDENT" && <button className="rounded-lg bg-[#0C2B4E] px-4 py-2 text-sm font-medium text-white hover:bg-[#143D6B] transition">+ Schedule Session</button>}
       </div>
 
       {/* Tabs */}

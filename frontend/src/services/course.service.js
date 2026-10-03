@@ -20,8 +20,9 @@ function normalizeCourse(course) {
   };
 }
 
-export async function fetchCourses({ pageParam = 1 } = {}) {
-  const response = await getCourses({ page: pageParam, limit: PAGE_SIZE });
+export async function fetchCourses({ pageParam = 1, queryKey } = {}) {
+  const [, , filters = {}] = queryKey ?? [];
+  const response = await getCourses({ page: pageParam, limit: PAGE_SIZE, ...filters });
 
   return {
     courses: response.programs.map(normalizeCourse),
@@ -36,9 +37,9 @@ export function useCourses() {
   });
 }
 
-export function useInfiniteCourses() {
+export function useInfiniteCourses(filters = {}) {
   return useInfiniteQuery({
-    queryKey: [...coursesQueryKey, "infinite"],
+    queryKey: [...coursesQueryKey, "infinite", filters],
     queryFn: fetchCourses,
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>

@@ -1,9 +1,21 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { useState } from "react";
 import { useInfiniteCourses } from "../../services/course.service";
+import { useDebounce } from "../../hooks/useDebounce";
 
 function Programs() {
-  const { data, isLoading, error, hasNextPage, fetchNextPage, isFetchingNextPage } = useInfiniteCourses();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get("search") ?? "");
+  const debouncedSearch = useDebounce(search);
+  const { data, isLoading, error, hasNextPage, fetchNextPage, isFetchingNextPage } = useInfiniteCourses({ search: debouncedSearch || undefined });
   const programs = data?.pages.flatMap((page) => page.courses) ?? [];
+
+  const handleSearch = (value) => {
+    setSearch(value);
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set("search", value); else next.delete("search");
+    setSearchParams(next, { replace: true });
+  };
 
   return (
     <div className="space-y-7">
@@ -11,6 +23,7 @@ function Programs() {
         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-100/70">Learning catalogue</p>
         <h1 className="mt-2 text-3xl font-semibold">Find your next program</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-sky-50/80">Explore mentor-led programs and enrol when you are ready to begin.</p>
+        <label className="mt-5 block max-w-xl"><span className="sr-only">Search programs</span><input type="search" value={search} onChange={(event) => handleSearch(event.target.value)} placeholder="Search programs or mentors" className="w-full rounded-xl border border-white/20 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none ring-offset-2 focus:ring-2 focus:ring-amber-300" /></label>
       </section>
 
       {isLoading && <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-64 animate-pulse rounded-3xl bg-slate-200" />)}</div>}

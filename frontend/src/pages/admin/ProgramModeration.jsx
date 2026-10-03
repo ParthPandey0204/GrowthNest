@@ -1,20 +1,34 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAdminPrograms, updateAdminProgramStatus } from "../../api/admin.api";
+import { useDebounce } from "../../hooks/useDebounce";
 
 export default function ProgramModeration() {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "");
+  const debouncedSearch = useDebounce(search);
   const limit = 10;
   
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["adminPrograms", page, search, statusFilter],
-    queryFn: () => getAdminPrograms({ page, limit, search, status: statusFilter }),
+    queryKey: ["adminPrograms", page, debouncedSearch, statusFilter],
+    queryFn: () => getAdminPrograms({ page, limit, search: debouncedSearch, status: statusFilter }),
     placeholderData: keepPreviousData,
   });
+
+  const updateFilters = ({ nextPage = page, nextSearch = search, nextStatus = statusFilter }) => {
+    const next = new URLSearchParams();
+    if (nextPage > 1) next.set("page", String(nextPage));
+    if (nextSearch) next.set("search", nextSearch);
+    if (nextStatus) next.set("status", nextStatus);
+    setSearchParams(next, { replace: true });
+  };
+
+  const changePage = (nextPage) => { setPage(nextPage); updateFilters({ nextPage }); };
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }) => updateAdminProgramStatus(id, status),
@@ -29,8 +43,8 @@ export default function ProgramModeration() {
           <p className="text-sm text-slate-500">Monitor programs, flag inappropriate content, or archive inactive programs.</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search program or mentor..." className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#0C2B4E] sm:w-64" />
-          <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#0C2B4E]">
+          <input type="search" value={search} onChange={(event) => { const value = event.target.value; setSearch(value); setPage(1); updateFilters({ nextPage: 1, nextSearch: value }); }} placeholder="Search program or mentor..." className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#0C2B4E] sm:w-64" />
+          <select value={statusFilter} onChange={(event) => { const value = event.target.value; setStatusFilter(value); setPage(1); updateFilters({ nextPage: 1, nextStatus: value }); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#0C2B4E]">
             <option value="">All statuses</option>
             <option value="DRAFT">Draft</option>
             <option value="ACTIVE">Active</option>
@@ -113,14 +127,14 @@ export default function ProgramModeration() {
           <div className="space-x-2">
             <button
               disabled={page === 1}
-              onClick={() => setPage(p => p - 1)}
+              onClick={() => changePage(page - 1)}
               className="px-3 py-1 text-sm rounded border border-slate-300 disabled:opacity-50"
             >
               Prev
             </button>
             <button
               disabled={page === data.pagination.totalPages}
-              onClick={() => setPage(p => p + 1)}
+              onClick={() => changePage(page + 1)}
               className="px-3 py-1 text-sm rounded border border-slate-300 disabled:opacity-50"
             >
               Next

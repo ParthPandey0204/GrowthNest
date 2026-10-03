@@ -22,8 +22,9 @@ function Login() {
     setIsSubmitting(true);
 
     try {
-      login(await loginRequest(formData));
-      navigate("/dashboard", { replace: true });
+      const auth = await loginRequest(formData);
+      login(auth);
+      navigate(auth.user?.role === "STUDENT" ? "/student/dashboard" : "/dashboard", { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

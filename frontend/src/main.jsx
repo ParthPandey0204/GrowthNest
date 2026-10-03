@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import App from "./app/App";
 import { AuthProvider } from "./store/AuthContext";
+import ErrorBoundary from "./components/feedback/ErrorBoundary";
+import { ToastProvider } from "./components/feedback/ToastProvider";
+import PageMeta from "./components/seo/PageMeta";
 import "./styles/index.css";
 
 const queryClient = new QueryClient({
@@ -21,7 +24,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
-          <App />
+          <ErrorBoundary>
+            <ToastProvider>
+              <PageMeta />
+              <App />
+            </ToastProvider>
+          </ErrorBoundary>
         </BrowserRouter>
       </AuthProvider>
       <ReactQueryDevtools initialIsOpen={false} />

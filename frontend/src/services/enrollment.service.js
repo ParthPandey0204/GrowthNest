@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createEnrollment, getLessonProgress, getMyEnrollments, getProgressSummary, updateLessonProgress } from "../api/enrollments.api";
+import { useToast } from "../components/feedback/toast";
 
 export const myEnrollmentsQueryKey = ["my-enrollments"];
 
@@ -12,6 +13,7 @@ export function useMyEnrollments() {
 
 export function useEnrollProgram() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   return useMutation({
     mutationFn: (programId) => createEnrollment({ programId }),
@@ -24,10 +26,14 @@ export function useEnrollProgram() {
       ]);
       return { previousEnrollments };
     },
-    onError: (_error, _programId, context) => {
+    onError: (error, _programId, context) => {
       queryClient.setQueryData(myEnrollmentsQueryKey, context?.previousEnrollments);
+      showToast(error.response?.data?.message || "We could not enrol you. Your changes were restored.", "error");
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: myEnrollmentsQueryKey }),
+    onSuccess: () => {
+      showToast("You are enrolled. Your learning journey starts now.");
+      queryClient.invalidateQueries({ queryKey: myEnrollmentsQueryKey });
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: myEnrollmentsQueryKey }),
   });
 }

@@ -19,9 +19,18 @@ const createProgram = async ({ title, description, price, thumbnail, mentorId })
   });
 };
 
-const listPrograms = async ({ page = 1, limit = 10 }) => {
+const listPrograms = async ({ page = 1, limit = 10, search = '' }) => {
   const skip = (page - 1) * limit;
-  const where = { status: 'ACTIVE' };
+  const where = {
+    status: 'ACTIVE',
+    ...(search && {
+      OR: [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { mentor: { name: { contains: search, mode: 'insensitive' } } },
+      ],
+    }),
+  };
 
   const [programs, total] = await Promise.all([
     prisma.program.findMany({

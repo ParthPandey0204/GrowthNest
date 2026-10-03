@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { UsersIcon, CurrencyDollarIcon, ClockIcon, PlayIcon } from "@heroicons/react/24/outline";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../../store/AuthContext";
 import MentorSnapshot from "./MentorSnapshot";
 import ProgressPulse from "../../components/ui/ProgressPulse";
@@ -34,6 +35,10 @@ function Dashboard() {
 
     return () => clearInterval(interval);
   }, []);
+
+  if (user?.role === "STUDENT") {
+    return <Navigate to="/student/dashboard" replace />;
+  }
 
   const firstName = displayName.trim().split(/\s+/)[0];
 

@@ -73,12 +73,14 @@ function Header({ onMenuToggle }) {
         </button>
 
         <div className="hidden items-center gap-3 sm:flex">
-          <button
-            type="button"
-            className="rounded-2xl bg-[linear-gradient(135deg,#f4b63d,#ffdf8f)] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-950 shadow-lg shadow-amber-200/30 transition hover:-translate-y-0.5 hover:shadow-xl"
-          >
-            Schedule Session
-          </button>
+          {user?.role !== "STUDENT" && (
+            <button
+              type="button"
+              className="rounded-2xl bg-[linear-gradient(135deg,#f4b63d,#ffdf8f)] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-950 shadow-lg shadow-amber-200/30 transition hover:-translate-y-0.5 hover:shadow-xl"
+            >
+              Schedule Session
+            </button>
+          )}
 
           <button
             type="button"

@@ -1,20 +1,34 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUsers, changeUserRole, toggleUserStatus, approveMentor } from "../../api/admin.api";
+import { useDebounce } from "../../hooks/useDebounce";
 
 export default function UserManagement() {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [roleFilter, setRoleFilter] = useState(searchParams.get("role") || "");
+  const debouncedSearch = useDebounce(search);
   const limit = 10;
   
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["adminUsers", page, search, roleFilter],
-    queryFn: () => getUsers({ page, limit, search, role: roleFilter }),
+    queryKey: ["adminUsers", page, debouncedSearch, roleFilter],
+    queryFn: () => getUsers({ page, limit, search: debouncedSearch, role: roleFilter }),
     placeholderData: keepPreviousData,
   });
+
+  const updateFilters = ({ nextPage = page, nextSearch = search, nextRole = roleFilter }) => {
+    const next = new URLSearchParams();
+    if (nextPage > 1) next.set("page", String(nextPage));
+    if (nextSearch) next.set("search", nextSearch);
+    if (nextRole) next.set("role", nextRole);
+    setSearchParams(next, { replace: true });
+  };
+
+  const changePage = (nextPage) => { setPage(nextPage); updateFilters({ nextPage }); };
 
   const roleMutation = useMutation({
     mutationFn: ({ id, role }) => changeUserRole(id, { role }),
@@ -45,12 +59,12 @@ export default function UserManagement() {
             placeholder="Search by name or email..."
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#0C2B4E] focus:ring-1 focus:ring-[#0C2B4E] outline-none w-full sm:w-64"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => { const value = e.target.value; setSearch(value); setPage(1); updateFilters({ nextPage: 1, nextSearch: value }); }}
           />
           <select
             className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-[#0C2B4E] focus:ring-1 focus:ring-[#0C2B4E] outline-none"
             value={roleFilter}
-            onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
+            onChange={(e) => { const value = e.target.value; setRoleFilter(value); setPage(1); updateFilters({ nextPage: 1, nextRole: value }); }}
           >
             <option value="">All Roles</option>
             <option value="STUDENT">Student</option>
@@ -151,14 +165,14 @@ export default function UserManagement() {
           <div className="space-x-2">
             <button
               disabled={page === 1}
-              onClick={() => setPage(p => p - 1)}
+              onClick={() => changePage(page - 1)}
               className="px-3 py-1 text-sm rounded border border-slate-300 disabled:opacity-50"
             >
               Prev
             </button>
             <button
               disabled={page === data.pagination.totalPages}
-              onClick={() => setPage(p => p + 1)}
+              onClick={() => changePage(page + 1)}
               className="px-3 py-1 text-sm rounded border border-slate-300 disabled:opacity-50"
             >
               Next
