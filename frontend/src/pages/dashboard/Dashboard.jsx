@@ -7,7 +7,6 @@ import MentorSnapshot from "./MentorSnapshot";
 import ProgressPulse from "../../components/ui/ProgressPulse";
 import GrowthInsight from "../../components/ui/GrowthInsight";
 import { getMentorStats } from "../../api/mentor.api";
-import { progressPulseData } from "../../data/dashboard/ProgressPulseData";
 import StatCard from "../../components/ui/StatCard.jsx";
 
 function Dashboard() {
@@ -21,13 +20,6 @@ function Dashboard() {
     { title: "Live Sessions", value: mentorStats?.stats.sessionCount ?? 0, change: 0, trend: "up", icon: ClockIcon, color: "orange" },
     { title: "Avg Completion", value: `${mentorStats?.stats.avgCompletion ?? 0}%`, change: 0, trend: "up", icon: PlayIcon, color: "purple" },
   ];
-  const growthInsightData = {
-  insight:
-    "Learners who attended 2 or more live sessions completed assignments 37% faster than others.",
-  timeframe: "the last 30 days",
-};
-
-
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(new Date());
@@ -106,15 +98,15 @@ function Dashboard() {
      
   
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-    <ProgressPulse items={progressPulseData} />
+    <ProgressPulse items={mentorStats?.progressPulse} />
 
      <GrowthInsight
-    insight={growthInsightData.insight}
-    timeframe={growthInsightData.timeframe}
+    insight={mentorStats?.insight?.text || "Loading your current learning data…"}
+    timeframe={mentorStats?.insight?.timeframe}
      />
     </div>
 
-     <MentorSnapshot />
+     <MentorSnapshot metrics={mentorStats?.snapshot} />
 
     </div>
   );

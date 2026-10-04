@@ -19,6 +19,7 @@ const createAssignmentValidation = [
     .trim()
     .notEmpty()
     .withMessage('programId is required'),
+  body('topic').optional({ values: 'null' }).trim().isLength({ max: 200 }),
 ];
 
 const listAssignmentsQueryValidation = [

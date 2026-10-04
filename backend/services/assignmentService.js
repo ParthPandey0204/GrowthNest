@@ -1,6 +1,6 @@
 const prisma = require('../prisma/client');
 
-const createAssignment = async (userId, { title, description, dueDate, programId }) => {
+const createAssignment = async (userId, { title, description, dueDate, programId, topic }) => {
   const program = await prisma.program.findUnique({
     where: { id: programId },
   });
@@ -24,6 +24,7 @@ const createAssignment = async (userId, { title, description, dueDate, programId
       prompt: description || null,
       dueAt: dueDate ? new Date(dueDate) : null,
       programId,
+      topic: topic?.trim() || null,
       status: 'PUBLISHED',
     },
   });

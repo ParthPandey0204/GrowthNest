@@ -74,6 +74,7 @@ model User {
   hostedSessions Session[]        @relation("SessionMentor")
   attendedSessions Session[]      @relation("SessionAttendees")
   lessonProgress LessonProgress[]
+  notifications  Notification[]
 }
 
 model Program {
@@ -97,6 +98,7 @@ model Lesson {
   id             String           @id @default(cuid())
   title          String
   content        String?
+  topic          String?
   type           LessonType       @default(ARTICLE)
   order          Int
   programId      String
@@ -134,6 +136,7 @@ model Assignment {
   program     Program?         @relation(fields: [programId], references: [id], onDelete: Cascade)
   lessonId    String?
   lesson      Lesson?          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  topic       String?
   submissions Submission[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -171,6 +174,19 @@ model Session {
   attendees  User[]        @relation("SessionAttendees")
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  type      String   @default("INFO")
+  readAt    DateTime?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model LessonProgress {

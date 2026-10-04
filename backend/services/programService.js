@@ -65,6 +65,7 @@ const getProgramById = async (id) => {
     include: {
       mentor: { select: mentorPublicSelect },
       lessons: { orderBy: { order: 'asc' } },
+      assignments: { where: { status: 'PUBLISHED' }, orderBy: { createdAt: 'asc' }, select: { id: true, title: true, description: true, dueAt: true, topic: true } },
     },
   });
 };

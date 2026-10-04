@@ -3,6 +3,7 @@ import api from "../api/axios";
 
 export default function CreateLessonForm({ programId, onCreated }) {
   const [title, setTitle] = useState("");
+  const [topic, setTopic] = useState("");
   const [content, setContent] = useState("");
   const [type, setType] = useState("VIDEO");
   const [file, setFile] = useState(null);
@@ -51,6 +52,7 @@ export default function CreateLessonForm({ programId, onCreated }) {
       // Create lesson first
       const { data } = await api.post(`/api/programs/${programId}/lessons`, {
         title,
+        topic,
         content,
         type,
       });
@@ -73,6 +75,7 @@ export default function CreateLessonForm({ programId, onCreated }) {
       }
       
       setTitle("");
+      setTopic("");
       setContent("");
       setFile(null);
       setProgress(0);
@@ -93,6 +96,11 @@ export default function CreateLessonForm({ programId, onCreated }) {
       
       <div className="space-y-4">
         <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Topic / module</label>
+          <input type="text" required className="w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-[#0C2B4E] focus:outline-none focus:ring-1 focus:ring-[#0C2B4E]" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="For example: Arrays and iteration" />
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
           <input
             type="text"
@@ -112,7 +120,6 @@ export default function CreateLessonForm({ programId, onCreated }) {
           >
             <option value="VIDEO">Video</option>
             <option value="ARTICLE">Article</option>
-            <option value="ASSIGNMENT">Assignment</option>
           </select>
         </div>
 

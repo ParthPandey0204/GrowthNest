@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../store/AuthContext";
 import { login as loginRequest } from "../../api/auth.api";
-import { getHomePath } from "../../app/RoleHomeRedirect";
+import { getHomePath } from "../../app/homePath";
 
 function Login() {
   const navigate = useNavigate();

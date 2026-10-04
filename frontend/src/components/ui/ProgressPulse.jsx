@@ -26,8 +26,10 @@ export default function ProgressPulse({ items = [] }) {
       </h3>
 
       <div className="space-y-3">
+        {items.length === 0 && <p className="py-4 text-sm text-gray-500">No learner activity to display yet.</p>}
         {items.map((item, index) => {
-          const TrendIcon = trendConfig[item.trend].icon;
+          const trend = trendConfig[item.trend] ? item.trend : "stable";
+          const TrendIcon = trendConfig[trend].icon;
 
           return (
             <div
@@ -36,10 +38,10 @@ export default function ProgressPulse({ items = [] }) {
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`rounded-full p-2 ${trendConfig[item.trend].bg}`}
+                  className={`rounded-full p-2 ${trendConfig[trend].bg}`}
                 >
                   <TrendIcon
-                    className={`h-4 w-4 ${trendConfig[item.trend].color}`}
+                    className={`h-4 w-4 ${trendConfig[trend].color}`}
                   />
                 </div>
 

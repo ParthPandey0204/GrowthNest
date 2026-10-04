@@ -1,6 +1,6 @@
 const prisma = require('../prisma/client');
 
-const createLesson = async (programId, userId, { title, content, type, order: reqOrder }) => {
+const createLesson = async (programId, userId, { title, content, topic, type, order: reqOrder }) => {
   const existingProgram = await prisma.program.findUnique({
     where: { id: programId },
   });
@@ -31,6 +31,7 @@ const createLesson = async (programId, userId, { title, content, type, order: re
     data: {
       title,
       content: content || null,
+      topic: topic?.trim() || null,
       type: type || 'ARTICLE',
       order,
       programId,

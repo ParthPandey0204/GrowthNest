@@ -43,7 +43,7 @@ function ProgressBar({ value }) {
   );
 }
 
-function EmptyState() {
+function EmptyState({ onCreateCourse }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-[28px] bg-[linear-gradient(135deg,#0C2B4E,#1D546C)] text-3xl text-white shadow-lg">
@@ -58,7 +58,7 @@ function EmptyState() {
         Start by creating your first course and begin mentoring learners.
       </p>
 
-      <button className="mt-7 rounded-2xl bg-[linear-gradient(135deg,#0C2B4E,#1D546C)] px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-slate-300/60 transition hover:-translate-y-0.5 hover:shadow-xl">
+      <button type="button" onClick={onCreateCourse} className="mt-7 rounded-2xl bg-[linear-gradient(135deg,#0C2B4E,#1D546C)] px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-slate-300/60 transition hover:-translate-y-0.5 hover:shadow-xl">
         + Create your first course
       </button>
     </div>
@@ -108,9 +108,13 @@ function Courses() {
     event.preventDefault();
     if (!newCourseTitle.trim()) return;
 
-    await createCourse.mutateAsync({ title: newCourseTitle.trim() });
-    setNewCourseTitle("");
-    setIsCreateFormOpen(false);
+    try {
+      await createCourse.mutateAsync({ title: newCourseTitle.trim() });
+      setNewCourseTitle("");
+      setIsCreateFormOpen(false);
+    } catch {
+      // The mutation state renders the API error below the form.
+    }
   };
 
   /* Derived analytics (backend-ready) */
@@ -189,7 +193,7 @@ function Courses() {
               </p>
             </div>
 
-            <button onClick={() => setIsCreateFormOpen(true)} className="inline-flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#0C2B4E,#1D546C)] px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-slate-300/60 transition hover:-translate-y-0.5 hover:shadow-xl">
+            <button type="button" onClick={() => setIsCreateFormOpen(true)} className="inline-flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#0C2B4E,#1D546C)] px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-slate-300/60 transition hover:-translate-y-0.5 hover:shadow-xl">
               + Create Course
             </button>
           </div>
@@ -199,7 +203,7 @@ function Courses() {
       {isCreateFormOpen && (
         <form onSubmit={handleCreateCourse} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <label className="sr-only" htmlFor="course-title">Course title</label>
-          <input id="course-title" value={newCourseTitle} onChange={(event) => setNewCourseTitle(event.target.value)} placeholder="Course title" className="min-w-56 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm" required />
+          <input id="course-title" autoFocus value={newCourseTitle} onChange={(event) => setNewCourseTitle(event.target.value)} placeholder="Course title" className="min-w-56 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm" required />
           <button type="submit" disabled={createCourse.isPending} className="rounded-xl bg-[#1D546C] px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
             {createCourse.isPending ? "Creating..." : "Create"}
           </button>
@@ -222,7 +226,7 @@ function Courses() {
         </div>
       ) : coursesData.length === 0 ? (
         <div className="rounded-[30px] border border-slate-200/70 bg-white/90 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-          <EmptyState />
+          <EmptyState onCreateCourse={() => setIsCreateFormOpen(true)} />
         </div>
       ) : (
         <section className="overflow-hidden rounded-[30px] border border-slate-200/70 bg-white/92 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">

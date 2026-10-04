@@ -13,6 +13,11 @@ const createLessonValidation = [
     .optional({ values: 'null' })
     .isString()
     .withMessage('Content must be a string'),
+  body('topic')
+    .optional({ values: 'null' })
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage('Topic must be 200 characters or fewer'),
   body('type')
     .optional()
     .isIn(validLessonTypes)

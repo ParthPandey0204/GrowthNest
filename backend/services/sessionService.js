@@ -12,7 +12,7 @@ const assertProgramOwnership = async (programId, mentorId) => {
 const createSession = async (mentorId, data) => {
   await assertProgramOwnership(data.programId, mentorId);
   const startsAt = new Date(data.scheduledAt);
-  return prisma.session.create({
+  const session = await prisma.session.create({
     data: {
       title: data.title,
       startsAt,
@@ -22,6 +22,22 @@ const createSession = async (mentorId, data) => {
       programId: data.programId || null,
     },
   });
+
+  if (session.programId) {
+    const students = await prisma.enrollment.findMany({ where: { programId: session.programId, status: 'ACTIVE' }, select: { userId: true } });
+    if (students.length) {
+      await prisma.notification.createMany({
+        data: students.map(({ userId }) => ({
+          userId,
+          type: 'SESSION',
+          title: 'New live session scheduled',
+          body: `${session.title} starts on ${session.startsAt.toLocaleString()}. The meeting link will open Google Meet or Zoom outside GrowthNest.`,
+        })),
+      });
+    }
+  }
+
+  return session;
 };
 
 const listSessions = async (user, filters) => {

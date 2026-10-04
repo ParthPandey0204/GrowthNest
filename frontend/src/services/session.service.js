@@ -6,6 +6,7 @@ const normalizeSession = (session) => ({
   datetime: session.startsAt,
   topic: session.title,
   course: session.program?.title ?? "General",
+  meetingUrl: session.meetingUrl,
   durationMin: session.endsAt ? Math.round((new Date(session.endsAt) - new Date(session.startsAt)) / 60000) : 0,
   attendees: session.attendees?.length ?? 0,
   status: ["SCHEDULED", "LIVE"].includes(session.status) ? "upcoming" : "completed",

@@ -152,9 +152,7 @@ function Sessions() {
                         <StatusBadge status={s.status} />
 
                         {s.status === "upcoming" ? (
-                          <button className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700 transition">
-                            Join
-                          </button>
+                          s.meetingUrl ? <a href={s.meetingUrl} target="_blank" rel="noreferrer" className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700 transition">Open meeting</a> : <span className="text-xs text-slate-500">Link pending</span>
                         ) : (
                           <button className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">
                             View

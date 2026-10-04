@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { getHomePath } from "./RoleHomeRedirect";
+import { getHomePath } from "./homePath";
 import { useAuth } from "../store/AuthContext";
 
 export default function Unauthorized() {

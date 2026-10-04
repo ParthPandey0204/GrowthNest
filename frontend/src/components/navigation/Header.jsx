@@ -1,11 +1,16 @@
 import { useAuth } from "../../store/AuthContext";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { getMyNotifications } from "../../api/notifications.api";
 
 function Header({ onMenuToggle }) {
   const { user, logout } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const { data: notificationData } = useQuery({ queryKey: ["notifications"], queryFn: getMyNotifications, enabled: Boolean(user) });
+  const notifications = notificationData?.notifications ?? [];
   const handleLogout = () => {
     logout();
     queryClient.clear();
@@ -19,8 +24,9 @@ function Header({ onMenuToggle }) {
     <header className="sticky top-0 z-30 border-b border-white/10 bg-[linear-gradient(135deg,#081c35,#0f3259_58%,#184c77)] shadow-[0_18px_40px_rgba(8,28,53,0.18)] backdrop-blur">
       <div className="flex w-full items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
-          <button
+          <div className="relative"><button
             type="button"
+            onClick={() => setIsNotificationsOpen((open) => !open)}
             onClick={onMenuToggle}
             className="rounded-xl border border-white/10 bg-white/5 p-2 text-white transition hover:bg-white/12 md:hidden"
             aria-label="Open navigation menu"
@@ -87,7 +93,7 @@ function Header({ onMenuToggle }) {
             className="relative rounded-2xl border border-white/10 bg-white/6 p-2.5 text-white transition hover:bg-white/12"
             aria-label="Notifications"
           >
-            <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-amber-400 ring-2 ring-[#0f3259]" />
+            {notifications.length > 0 && <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-amber-400 ring-2 ring-[#0f3259]" />}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
@@ -101,7 +107,7 @@ function Header({ onMenuToggle }) {
               <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5" />
               <path d="M10 19a2 2 0 0 0 4 0" />
             </svg>
-          </button>
+          </button>{isNotificationsOpen && <div className="absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-2xl"><div className="border-b border-slate-100 px-4 py-3"><p className="font-semibold">Notifications</p></div><div className="max-h-80 overflow-y-auto">{notifications.length ? notifications.map((notification) => <div key={notification.id} className="border-b border-slate-100 px-4 py-3 text-sm"><p className="font-semibold">{notification.title}</p><p className="mt-1 text-slate-600">{notification.body}</p><p className="mt-2 text-xs text-slate-400">{new Date(notification.createdAt).toLocaleString()}</p></div>) : <p className="p-4 text-sm text-slate-500">No new notifications.</p>}</div></div>}</div>
 
           <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/6 px-3 py-2 text-white backdrop-blur">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/12 text-sm font-semibold">
