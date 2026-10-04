@@ -9,14 +9,16 @@ function ProgramDetails() {
   const { id } = useParams();
   const { user } = useAuth();
   const isMentor = user?.role === "MENTOR";
-  const publicProgram = useCourse(id);
+  const publicProgram = useCourse(id, !isMentor);
   const mentorProgram = useMyCourse(id, isMentor);
-  const program = mentorProgram.data ?? publicProgram.data;
-  const isLoading = isMentor ? mentorProgram.isLoading || publicProgram.isLoading : publicProgram.isLoading;
-  const error = isMentor ? mentorProgram.error && publicProgram.error : publicProgram.error;
+  // New programs are drafts. Drafts are intentionally unavailable through the
+  // public endpoint, so mentors must load their own programs through /mine.
+  const programQuery = isMentor ? mentorProgram : publicProgram;
+  const program = programQuery.data;
+  const isLoading = programQuery.isLoading;
+  const error = programQuery.error;
   const refetch = () => {
-    publicProgram.refetch();
-    if (isMentor) return mentorProgram.refetch();
+    return programQuery.refetch();
   };
   const updateCourse = useUpdateCourse();
   const [isLessonFormOpen, setIsLessonFormOpen] = useState(false);
