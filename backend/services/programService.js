@@ -56,6 +56,29 @@ const listPrograms = async ({ page = 1, limit = 10, search = '' }) => {
   };
 };
 
+const listMentorPrograms = async ({ mentorId, page = 1, limit = 10 }) => {
+  const skip = (page - 1) * limit;
+  const where = { mentorId, status: { not: 'ARCHIVED' } };
+  const [programs, total] = await Promise.all([
+    prisma.program.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        mentor: { select: mentorPublicSelect },
+        _count: { select: { enrollments: true, lessons: true } },
+      },
+    }),
+    prisma.program.count({ where }),
+  ]);
+
+  return {
+    programs,
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
+  };
+};
+
 const getProgramById = async (id) => {
   return await prisma.program.findFirst({
     where: {
@@ -66,6 +89,18 @@ const getProgramById = async (id) => {
       mentor: { select: mentorPublicSelect },
       lessons: { orderBy: { order: 'asc' } },
       assignments: { where: { status: 'PUBLISHED' }, orderBy: { createdAt: 'asc' }, select: { id: true, title: true, description: true, dueAt: true, topic: true } },
+    },
+  });
+};
+
+const getMentorProgramById = async (id, mentorId) => {
+  return prisma.program.findFirst({
+    where: { id, mentorId, status: { not: 'ARCHIVED' } },
+    include: {
+      mentor: { select: mentorPublicSelect },
+      lessons: { orderBy: { order: 'asc' } },
+      assignments: { where: { status: 'PUBLISHED' }, orderBy: { createdAt: 'asc' }, select: { id: true, title: true, description: true, dueAt: true, topic: true } },
+      _count: { select: { enrollments: true, lessons: true } },
     },
   });
 };
@@ -127,7 +162,9 @@ module.exports = {
   mentorPublicSelect,
   createProgram,
   listPrograms,
+  listMentorPrograms,
   getProgramById,
+  getMentorProgramById,
   updateProgram,
   archiveProgram,
 };

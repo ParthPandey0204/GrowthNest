@@ -27,6 +27,18 @@ const listPrograms = async (req, res) => {
   }
 };
 
+const listMyPrograms = async (req, res) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const result = await programService.listMentorPrograms({ mentorId: req.user.id, page, limit });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('List mentor programs error:', error);
+    return res.status(500).json({ message: 'Unable to fetch your programs' });
+  }
+};
+
 const getProgramById = async (req, res) => {
   try {
     const program = await programService.getProgramById(req.params.id);
@@ -37,6 +49,17 @@ const getProgramById = async (req, res) => {
   } catch (error) {
     console.error('Get program error:', error);
     return res.status(500).json({ message: 'Unable to fetch program' });
+  }
+};
+
+const getMyProgramById = async (req, res) => {
+  try {
+    const program = await programService.getMentorProgramById(req.params.id, req.user.id);
+    if (!program) return res.status(404).json({ message: 'Program not found' });
+    return res.status(200).json({ program });
+  } catch (error) {
+    console.error('Get mentor program error:', error);
+    return res.status(500).json({ message: 'Unable to fetch your program' });
   }
 };
 
@@ -100,7 +123,9 @@ const getProgramAnalytics = async (req, res) => {
 module.exports = {
   createProgram,
   listPrograms,
+  listMyPrograms,
   getProgramById,
+  getMyProgramById,
   updateProgram,
   archiveProgram,
   getProgramAnalytics,

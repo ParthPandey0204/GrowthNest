@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 import {
   BookOpenIcon,
@@ -11,7 +11,7 @@ import StatCard from "../../components/ui/StatCard";
 import {
   useCreateCourse,
   useDeleteCourse,
-  useInfiniteCourses,
+  useMyInfiniteCourses,
 } from "../../services/course.service";
 
 /* ---------- Small UI Components ---------- */
@@ -87,7 +87,8 @@ function CourseSkeleton() {
 
 function Courses() {
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
-  const [newCourseTitle, setNewCourseTitle] = useState("");
+  const [newCourse, setNewCourse] = useState({ title: "", description: "", price: "" });
+  const navigate = useNavigate();
   const {
     data,
     error,
@@ -96,7 +97,7 @@ function Courses() {
     hasNextPage,
     fetchNextPage,
     refetch,
-  } = useInfiniteCourses();
+  } = useMyInfiniteCourses();
   const createCourse = useCreateCourse();
   const deleteCourse = useDeleteCourse();
   const coursesData = useMemo(
@@ -106,12 +107,15 @@ function Courses() {
 
   const handleCreateCourse = async (event) => {
     event.preventDefault();
-    if (!newCourseTitle.trim()) return;
+    if (!newCourse.title.trim()) return;
 
     try {
-      await createCourse.mutateAsync({ title: newCourseTitle.trim() });
-      setNewCourseTitle("");
-      setIsCreateFormOpen(false);
+      const { program } = await createCourse.mutateAsync({
+        title: newCourse.title.trim(),
+        description: newCourse.description.trim() || undefined,
+        price: newCourse.price === "" ? undefined : Number(newCourse.price),
+      });
+      navigate(`/programs/${program.id}`);
     } catch {
       // The mutation state renders the API error below the form.
     }
@@ -201,13 +205,17 @@ function Courses() {
       </section>
 
       {isCreateFormOpen && (
-        <form onSubmit={handleCreateCourse} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <label className="sr-only" htmlFor="course-title">Course title</label>
-          <input id="course-title" autoFocus value={newCourseTitle} onChange={(event) => setNewCourseTitle(event.target.value)} placeholder="Course title" className="min-w-56 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm" required />
-          <button type="submit" disabled={createCourse.isPending} className="rounded-xl bg-[#1D546C] px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
-            {createCourse.isPending ? "Creating..." : "Create"}
-          </button>
-          <button type="button" onClick={() => setIsCreateFormOpen(false)} className="px-3 py-2 text-sm text-slate-600">Cancel</button>
+        <form onSubmit={handleCreateCourse} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="grid gap-3 md:grid-cols-[1fr_1fr_10rem]">
+            <label className="text-sm font-medium text-slate-700">Course title<input autoFocus value={newCourse.title} onChange={(event) => setNewCourse((course) => ({ ...course, title: event.target.value }))} placeholder="e.g. Product Management Foundations" className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" required /></label>
+            <label className="text-sm font-medium text-slate-700">Short description<input value={newCourse.description} onChange={(event) => setNewCourse((course) => ({ ...course, description: event.target.value }))} placeholder="What learners will achieve" className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" /></label>
+            <label className="text-sm font-medium text-slate-700">Price (₹)<input type="number" min="0" step="0.01" value={newCourse.price} onChange={(event) => setNewCourse((course) => ({ ...course, price: event.target.value }))} placeholder="Free" className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" /></label>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button type="submit" disabled={createCourse.isPending} className="rounded-xl bg-[#1D546C] px-4 py-2 text-sm font-medium text-white disabled:opacity-60">{createCourse.isPending ? "Creating..." : "Create draft & add content"}</button>
+            <button type="button" onClick={() => setIsCreateFormOpen(false)} className="px-3 py-2 text-sm text-slate-600">Cancel</button>
+            <p className="text-sm text-slate-500">You can publish when the course is ready for learners.</p>
+          </div>
           {createCourse.error && <p className="w-full text-sm text-rose-600">{createCourse.error.message || "Unable to create course."}</p>}
         </form>
       )}

@@ -5,6 +5,8 @@ import {
   createCourse,
   getCourse,
   getCourses,
+  getMyCourse,
+  getMyCourses,
   updateCourse,
 } from "../api/courses.api";
 
@@ -30,6 +32,14 @@ export async function fetchCourses({ pageParam = 1, queryKey } = {}) {
   };
 }
 
+async function fetchMyCourses({ pageParam = 1 }) {
+  const response = await getMyCourses({ page: pageParam, limit: PAGE_SIZE });
+  return {
+    courses: response.programs.map(normalizeCourse),
+    pagination: response.pagination,
+  };
+}
+
 export function useCourses() {
   return useQuery({
     queryKey: coursesQueryKey,
@@ -49,11 +59,31 @@ export function useInfiniteCourses(filters = {}) {
   });
 }
 
-export function useCourse(courseId) {
+export function useMyInfiniteCourses() {
+  return useInfiniteQuery({
+    queryKey: [...coursesQueryKey, "mine"],
+    queryFn: fetchMyCourses,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.page < lastPage.pagination.totalPages
+        ? Number(lastPage.pagination.page) + 1
+        : undefined,
+  });
+}
+
+export function useCourse(courseId, enabled = true) {
   return useQuery({
     queryKey: [...coursesQueryKey, courseId],
     queryFn: async () => normalizeCourse((await getCourse(courseId)).program),
-    enabled: Boolean(courseId),
+    enabled: Boolean(courseId) && enabled,
+  });
+}
+
+export function useMyCourse(courseId, enabled = true) {
+  return useQuery({
+    queryKey: [...coursesQueryKey, "mine", courseId],
+    queryFn: async () => normalizeCourse((await getMyCourse(courseId)).program),
+    enabled: Boolean(courseId) && enabled,
   });
 }
 

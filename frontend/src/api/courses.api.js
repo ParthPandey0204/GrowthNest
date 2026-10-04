@@ -1,6 +1,8 @@
 import api from "./axios";
 
 export const getCourses = (params) => api.get("/api/programs", { params }).then(({ data }) => data);
+export const getMyCourses = (params) => api.get("/api/programs/mine", { params }).then(({ data }) => data);
+export const getMyCourse = (id) => api.get(`/api/programs/mine/${id}`).then(({ data }) => data);
 export const getCourse = (id) => api.get(`/api/programs/${id}`).then(({ data }) => data);
 export const createCourse = (payload) => api.post("/api/programs", payload).then(({ data }) => data);
 export const updateCourse = (id, payload) => api.put(`/api/programs/${id}`, payload).then(({ data }) => data);

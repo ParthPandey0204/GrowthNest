@@ -25,6 +25,9 @@ router.post(
 
 router.get('/', listProgramsValidation, handleValidation, programController.listPrograms);
 
+router.get('/mine', authMiddleware, roleMiddleware('MENTOR'), listProgramsValidation, handleValidation, programController.listMyPrograms);
+router.get('/mine/:id', authMiddleware, roleMiddleware('MENTOR'), programController.getMyProgramById);
+
 router.get('/:id', programController.getProgramById);
 
 router.get('/:id/analytics', authMiddleware, programController.getProgramAnalytics);
