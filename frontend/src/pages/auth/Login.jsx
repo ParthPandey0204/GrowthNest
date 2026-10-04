@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../store/AuthContext";
 import { login as loginRequest } from "../../api/auth.api";
+import { getHomePath } from "../../app/RoleHomeRedirect";
 
 function Login() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ function Login() {
     try {
       const auth = await loginRequest(formData);
       login(auth);
-      navigate(auth.user?.role === "STUDENT" ? "/student/dashboard" : "/dashboard", { replace: true });
+      navigate(getHomePath(auth.user?.role), { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

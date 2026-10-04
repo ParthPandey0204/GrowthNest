@@ -26,6 +26,8 @@ import Tasks from "../pages/tasks/Tasks";
 import Students from "../pages/students/Students";
 import ContentManager from "../pages/content/ContentManager";
 import Calendar from "../pages/calendar/Calendar";
+import RoleHomeRedirect from "./RoleHomeRedirect";
+import Unauthorized from "./Unauthorized";
 
 function App() {
   return (
@@ -42,7 +44,7 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<RoleHomeRedirect />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/dashboard/analytics" element={<Analytics />} />
         <Route path="/dashboard/courses" element={<Courses />} />
@@ -78,6 +80,9 @@ function App() {
         <Route path="/admin/users" element={<UserManagement />} />
         <Route path="/admin/programs" element={<ProgramModeration />} />
       </Route>
+
+      <Route path="/unauthorized" element={<ProtectedRoute><Unauthorized /></ProtectedRoute>} />
+      <Route path="*" element={<RoleHomeRedirect />} />
     </Routes>
   );
 }

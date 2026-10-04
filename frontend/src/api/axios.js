@@ -30,6 +30,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const apiMessage = error.response?.data?.message || error.response?.data?.errors?.[0]?.msg;
+    if (apiMessage) error.message = apiMessage;
     if (error.response?.status === 401) {
       localStorage.removeItem("growthnest_auth");
       window.dispatchEvent(new Event("growthnest:unauthorized"));

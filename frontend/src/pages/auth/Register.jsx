@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../store/AuthContext";
 import { register as registerRequest } from "../../api/auth.api";
+import { getHomePath } from "../../app/RoleHomeRedirect";
 
 function Register() {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ function Register() {
       const result = await registerRequest(formData);
       if (result.token) {
         login(result);
-        navigate("/dashboard", { replace: true });
+        navigate(getHomePath(result.user?.role), { replace: true });
       } else {
         setNotice(result.message || "Your account was created. You can sign in once it is approved.");
       }

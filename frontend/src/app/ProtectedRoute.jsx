@@ -11,7 +11,7 @@ function ProtectedRoute({ children, role }) {
   }
 
   if (role && user?.role !== role) {
-    return <Navigate to="/unauthorized" replace />;
+    return <Navigate to="/unauthorized" replace state={{ from: location }} />;
   }
 
   return children;
