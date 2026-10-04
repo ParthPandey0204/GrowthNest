@@ -24,7 +24,6 @@ import LessonView from "../pages/programs/LessonView";
 import StudentDashboard from "../pages/student/StudentDashboard";
 import Tasks from "../pages/tasks/Tasks";
 import Students from "../pages/students/Students";
-import ContentManager from "../pages/content/ContentManager";
 import Calendar from "../pages/calendar/Calendar";
 import RoleHomeRedirect from "./RoleHomeRedirect";
 import Unauthorized from "./Unauthorized";
@@ -56,7 +55,6 @@ function App() {
         <Route path="/dashboard/sessions" element={<Sessions />} />
         <Route path="/dashboard/tasks" element={<ProtectedRoute role="MENTOR"><Tasks /></ProtectedRoute>} />
         <Route path="/dashboard/students" element={<ProtectedRoute role="MENTOR"><Students /></ProtectedRoute>} />
-        <Route path="/dashboard/content" element={<ProtectedRoute role="MENTOR"><ContentManager /></ProtectedRoute>} />
         <Route path="/dashboard/calendar" element={<Calendar />} />
         <Route path="/snapshot" element={<ProtectedRoute role="MENTOR"><MentorSnapshot /></ProtectedRoute>} />
         <Route path="/settings" element={<Settings />} />

@@ -1,11 +1,12 @@
 import { useState, useRef } from "react";
 import api from "../api/axios";
 
-export default function CreateLessonForm({ programId, onCreated }) {
+export default function CreateLessonForm({ programId, topics = [], onCreated }) {
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("");
   const [content, setContent] = useState("");
   const [type, setType] = useState("VIDEO");
+  const [dueDate, setDueDate] = useState("");
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -49,35 +50,43 @@ export default function CreateLessonForm({ programId, onCreated }) {
     setIsSubmitting(true);
 
     try {
-      // Create lesson first
-      const { data } = await api.post(`/api/programs/${programId}/lessons`, {
-        title,
-        topic,
-        content,
-        type,
-      });
-
-      const lessonId = data.lesson.id;
-
-      // Upload video if applicable
-      if (type === "VIDEO" && file) {
-        const formData = new FormData();
-        formData.append("lessonId", lessonId);
-        formData.append("file", file);
-
-        await api.post("/api/upload/video", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-          onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setProgress(percentCompleted);
-          }
+      if (type === "ASSIGNMENT") {
+        await api.post("/api/assignments", {
+          title,
+          topic,
+          description: content,
+          dueDate: dueDate || null,
+          programId,
         });
+      } else {
+        const { data } = await api.post(`/api/programs/${programId}/lessons`, {
+          title,
+          topic,
+          content,
+          type,
+        });
+
+        // Upload a video after its lesson has been created.
+        if (type === "VIDEO" && file) {
+          const formData = new FormData();
+          formData.append("lessonId", data.lesson.id);
+          formData.append("file", file);
+
+          await api.post("/api/upload/video", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+            onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setProgress(percentCompleted);
+            }
+          });
+        }
       }
       
       setTitle("");
       setTopic("");
       setContent("");
       setFile(null);
+      setDueDate("");
       setProgress(0);
       setIsSubmitting(false);
       if (onCreated) onCreated();
@@ -90,14 +99,16 @@ export default function CreateLessonForm({ programId, onCreated }) {
 
   return (
     <form onSubmit={handleSubmit} className="p-6 border border-slate-200 rounded-xl bg-white shadow-sm">
-      <h3 className="text-lg font-semibold text-slate-900 mb-4">Create New Lesson</h3>
+      <h3 className="text-lg font-semibold text-slate-900 mb-1">Add to curriculum</h3>
+      <p className="mb-4 text-sm text-slate-500">Choose a topic to place this item in an existing module, or type a new topic to create one.</p>
       
       {error && <div className="mb-4 p-3 bg-rose-50 text-rose-700 text-sm rounded-lg border border-rose-200">{error}</div>}
       
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Topic / module</label>
-          <input type="text" required className="w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-[#0C2B4E] focus:outline-none focus:ring-1 focus:ring-[#0C2B4E]" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="For example: Arrays and iteration" />
+          <input type="text" list="course-topics" required className="w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-[#0C2B4E] focus:outline-none focus:ring-1 focus:ring-[#0C2B4E]" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="For example: Arrays and iteration" />
+          <datalist id="course-topics">{topics.map((existingTopic) => <option key={existingTopic} value={existingTopic} />)}</datalist>
         </div>
 
         <div>
@@ -120,13 +131,21 @@ export default function CreateLessonForm({ programId, onCreated }) {
           >
             <option value="VIDEO">Video</option>
             <option value="ARTICLE">Article</option>
+            <option value="ASSIGNMENT">Assignment</option>
           </select>
         </div>
 
         {type !== "VIDEO" && (
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Content</label>
-            <textarea required rows="5" className="w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-[#0C2B4E] focus:outline-none focus:ring-1 focus:ring-[#0C2B4E]" value={content} onChange={(e) => setContent(e.target.value)} placeholder={type === "ARTICLE" ? "Write the lesson content or add a resource URL" : "Describe the assignment"} />
+            <label className="block text-sm font-medium text-slate-700 mb-1">{type === "ASSIGNMENT" ? "Instructions" : "Content"}</label>
+            <textarea required rows="5" className="w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-[#0C2B4E] focus:outline-none focus:ring-1 focus:ring-[#0C2B4E]" value={content} onChange={(e) => setContent(e.target.value)} placeholder={type === "ARTICLE" ? "Write the lesson content or add a resource URL" : "Describe what learners should submit"} />
+          </div>
+        )}
+
+        {type === "ASSIGNMENT" && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Due date <span className="font-normal text-slate-400">(optional)</span></label>
+            <input type="datetime-local" className="w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-[#0C2B4E] focus:outline-none focus:ring-1 focus:ring-[#0C2B4E]" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </div>
         )}
 
@@ -192,7 +211,7 @@ export default function CreateLessonForm({ programId, onCreated }) {
           disabled={isSubmitting}
           className="w-full px-4 py-2 bg-[#0C2B4E] text-white text-sm font-medium rounded-lg hover:bg-[#1D546C] disabled:opacity-50 transition-colors"
         >
-          {isSubmitting ? "Saving..." : "Create Lesson"}
+          {isSubmitting ? "Saving..." : type === "ASSIGNMENT" ? "Add Assignment" : "Add to Course"}
         </button>
       </div>
     </form>
