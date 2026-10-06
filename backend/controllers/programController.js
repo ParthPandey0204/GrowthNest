@@ -59,7 +59,9 @@ const getMyProgramById = async (req, res) => {
     return res.status(200).json({ program });
   } catch (error) {
     console.error('Get mentor program error:', error);
-    return res.status(500).json({ message: 'Unable to fetch your program' });
+    return res.status(500).json({ 
+      message: error.message || 'Unable to fetch your program' 
+    });
   }
 };
 
