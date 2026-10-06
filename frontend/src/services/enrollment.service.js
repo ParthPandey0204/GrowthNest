@@ -50,11 +50,11 @@ export function useUpdateLessonProgress() {
   });
 }
 
-export function useLessonProgress(programId) {
+export function useLessonProgress(programId, enabled = true) {
   return useQuery({
     queryKey: ["lesson-progress", programId],
     queryFn: async () => (await getLessonProgress(programId)).lessonProgress,
-    enabled: Boolean(programId),
+    enabled: Boolean(programId) && enabled,
   });
 }
 

@@ -1,16 +1,26 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useCourse } from "../../services/course.service";
+import { useCourse, useMyCourse } from "../../services/course.service";
 import { useUpdateLessonProgress, useLessonProgress } from "../../services/enrollment.service";
+import { useAuth } from "../../store/AuthContext";
 
 function LessonView() {
   const { id, lessonId } = useParams();
   const navigate = useNavigate();
-  const { data: program, isLoading: isProgramLoading } = useCourse(id);
-  const { data: lessonProgress = [], isLoading: isProgressLoading } = useLessonProgress(id);
+  const { user } = useAuth();
+  const isMentor = user?.role === "MENTOR";
+
+  const publicProgram = useCourse(id, !isMentor);
+  const mentorProgram = useMyCourse(id, isMentor);
+  const programQuery = isMentor ? mentorProgram : publicProgram;
+
+  const program = programQuery.data;
+  const isProgramLoading = programQuery.isLoading;
+
+  const { data: lessonProgress = [], isLoading: isProgressLoading } = useLessonProgress(id, !isMentor);
   const updateProgress = useUpdateLessonProgress();
   const completedLessons = new Set(lessonProgress.filter((item) => item.status === "COMPLETED").map((item) => item.lessonId));
 
-  if (isProgramLoading || isProgressLoading) {
+  if (isProgramLoading || (isProgressLoading && !isMentor)) {
     return <div className="h-screen flex items-center justify-center animate-pulse"><div className="h-32 w-32 bg-slate-200 rounded-full"></div></div>;
   }
 
@@ -97,24 +107,38 @@ function LessonView() {
             <h1 className="text-3xl font-bold text-slate-900">{currentLesson.title}</h1>
           </header>
 
-          <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-lg mb-8">
-            {currentLesson.type === 'VIDEO' || currentLesson.content?.includes('cloudinary') ? (
+          {currentLesson.type === 'VIDEO' ? (
+            <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-lg mb-8">
               <video 
                 src={currentLesson.content || 'https://res.cloudinary.com/demo/video/upload/v1355938833/elephants.mp4'} 
                 controls 
                 className="w-full h-full object-contain"
                 controlsList="nodownload"
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-slate-800 text-slate-400">
-                {currentLesson.type} content would go here
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1">
+                  Article
+                </span>
+                {currentLesson.topic && (
+                  <span className="text-xs text-slate-500 font-medium">
+                    Topic: {currentLesson.topic}
+                  </span>
+                )}
               </div>
-            )}
-          </div>
+              <div className="prose prose-slate max-w-none text-slate-800 leading-relaxed whitespace-pre-wrap text-base">
+                {currentLesson.content || "No content written for this lesson yet."}
+              </div>
+            </div>
+          )}
 
-          <div className="prose prose-slate max-w-none mb-10">
-            {currentLesson.description && <p>{currentLesson.description}</p>}
-          </div>
+          {currentLesson.description && (
+            <div className="prose prose-slate max-w-none mb-10">
+              <p>{currentLesson.description}</p>
+            </div>
+          )}
 
           <div className="flex items-center justify-between pt-6 border-t border-slate-200">
             <button
