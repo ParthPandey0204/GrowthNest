@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useParams } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
@@ -27,10 +27,7 @@ import Calendar from "../pages/calendar/Calendar";
 import RoleHomeRedirect from "./RoleHomeRedirect";
 import Unauthorized from "./Unauthorized";
 
-function LegacyCourseRedirect() {
-  const { courseId } = useParams();
-  return <Navigate to={`/programs/${courseId}`} replace />;
-}
+import CourseDetails from "../pages/courses/CourseDetails";
 
 function App() {
   return (
@@ -53,7 +50,7 @@ function App() {
         <Route path="/dashboard/courses" element={<Courses />} />
         <Route
           path="/dashboard/courses/:courseId"
-          element={<LegacyCourseRedirect />}
+          element={<ProtectedRoute role="MENTOR"><CourseDetails /></ProtectedRoute>}
         />
         <Route path="/dashboard/messages" element={<Messages />} />
         <Route path="/dashboard/sessions" element={<Sessions />} />

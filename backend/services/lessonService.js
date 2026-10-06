@@ -56,7 +56,29 @@ const getLessonsByProgramId = async (programId) => {
   });
 };
 
+const deleteLesson = async (lessonId, mentorId) => {
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: lessonId },
+    include: { program: { select: { mentorId: true } } },
+  });
+
+  if (!lesson) {
+    const error = new Error('Lesson not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (lesson.program.mentorId !== mentorId) {
+    const error = new Error('Forbidden: You do not own this lesson');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  await prisma.lesson.delete({ where: { id: lessonId } });
+};
+
 module.exports = {
   createLesson,
   getLessonsByProgramId,
+  deleteLesson,
 };

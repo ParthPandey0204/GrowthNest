@@ -65,6 +65,13 @@ router.get(
   lessonController.getLessonsByProgramId
 );
 
+router.delete(
+  '/:id/lessons/:lessonId',
+  authMiddleware,
+  roleMiddleware('MENTOR'),
+  lessonController.deleteLesson
+);
+
 // Program Enrollments (Mentor view)
 router.get(
   '/:id/enrollments',

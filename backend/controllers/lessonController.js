@@ -35,7 +35,21 @@ const getLessonsByProgramId = async (req, res) => {
   }
 };
 
+const deleteLesson = async (req, res) => {
+  try {
+    await lessonService.deleteLesson(req.params.lessonId, req.user.id);
+    return res.status(200).json({ message: 'Lesson deleted successfully' });
+  } catch (error) {
+    console.error('Delete lesson error:', error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    return res.status(500).json({ message: 'Unable to delete lesson' });
+  }
+};
+
 module.exports = {
   createLesson,
   getLessonsByProgramId,
+  deleteLesson,
 };

@@ -8,6 +8,7 @@ import {
   getMyCourse,
   getMyCourses,
   updateCourse,
+  deleteCourseLesson,
 } from "../api/courses.api";
 
 export const coursesQueryKey = ["courses"];
@@ -106,4 +107,14 @@ export function useUpdateCourse() {
 
 export function useDeleteCourse() {
   return useCourseMutation(archiveCourse);
+}
+
+export function useDeleteLesson() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ programId, lessonId }) => deleteCourseLesson(programId, lessonId),
+    onSuccess: (_data, { programId }) => {
+      queryClient.invalidateQueries({ queryKey: [...coursesQueryKey, "mine", programId] });
+    },
+  });
 }
