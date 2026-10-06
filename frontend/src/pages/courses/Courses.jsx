@@ -306,7 +306,7 @@ function Courses() {
                         Archive
                       </button>
                       <Link
-                        to={`/dashboard/courses/${course.id}`}
+                        to={`/programs/${course.id}`}
                         className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-[#1D546C] transition hover:border-[#1D546C] hover:bg-[#1D546C]/5"
                       >
                         Open

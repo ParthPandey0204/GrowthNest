@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
@@ -11,7 +11,6 @@ import ProgramModeration from "../pages/admin/ProgramModeration";
 import Dashboard from "../pages/dashboard/Dashboard";
 import MentorSnapshot from "../pages/dashboard/MentorSnapshot";
 import Analytics from "../pages/analytics/Analytics";
-import CourseDetails from "../pages/courses/CourseDetails";
 import Courses from "../pages/courses/Courses";
 import Messages from "../pages/messages/Messages";
 import Sessions from "../pages/sessions/Sessions";
@@ -27,6 +26,11 @@ import Students from "../pages/students/Students";
 import Calendar from "../pages/calendar/Calendar";
 import RoleHomeRedirect from "./RoleHomeRedirect";
 import Unauthorized from "./Unauthorized";
+
+function LegacyCourseRedirect() {
+  const { courseId } = useParams();
+  return <Navigate to={`/programs/${courseId}`} replace />;
+}
 
 function App() {
   return (
@@ -49,7 +53,7 @@ function App() {
         <Route path="/dashboard/courses" element={<Courses />} />
         <Route
           path="/dashboard/courses/:courseId"
-          element={<CourseDetails />}
+          element={<LegacyCourseRedirect />}
         />
         <Route path="/dashboard/messages" element={<Messages />} />
         <Route path="/dashboard/sessions" element={<Sessions />} />
