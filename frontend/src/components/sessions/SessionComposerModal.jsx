@@ -1,169 +1,43 @@
 import { useState } from "react";
 
-function buildInitialForm() {
-  const nextHour = new Date();
-  nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+const localDateTime = (value) => {
+  const date = value ? new Date(value) : new Date(Date.now() + 60 * 60 * 1000);
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
+};
 
-  return {
-    topic: "",
-    course: "DSA Mastery",
-    date: nextHour.toISOString().slice(0, 10),
-    time: `${String(nextHour.getHours()).padStart(2, "0")}:00`,
-    durationMin: 60,
-    attendees: 12,
-  };
-}
+function SessionComposerModal({ onClose, onSubmit, programs = [], session, isSaving = false, error }) {
+  const [form, setForm] = useState(() => ({
+    title: session?.title ?? "",
+    programId: session?.programId ?? "",
+    scheduledAt: localDateTime(session?.startsAt),
+    duration: session?.endsAt ? Math.max(1, Math.round((new Date(session.endsAt) - new Date(session.startsAt)) / 60000)) : 60,
+    meetLink: session?.meetingUrl ?? "",
+  }));
 
-function SessionComposerModal({ onClose, onCreate }) {
-  const [form, setForm] = useState(buildInitialForm);
+  const update = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
 
-  function handleChange(event) {
-    const { name, value } = event.target;
-    setForm((current) => ({
-      ...current,
-      [name]: name === "durationMin" || name === "attendees" ? Number(value) : value,
-    }));
-  }
-
-  function handleSubmit(event) {
+  const submit = (event) => {
     event.preventDefault();
+    onSubmit({ ...form, scheduledAt: new Date(form.scheduledAt).toISOString(), duration: Number(form.duration), programId: form.programId || undefined, meetLink: form.meetLink || undefined });
+  };
 
-    const datetime = new Date(`${form.date}T${form.time}:00`);
-
-    onCreate({
-      topic: form.topic,
-      course: form.course,
-      datetime: datetime.toISOString(),
-      durationMin: form.durationMin,
-      attendees: form.attendees,
-      status: "upcoming",
-    });
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
-      <div className="w-full max-w-2xl overflow-hidden rounded-[28px] bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-slate-100 bg-[linear-gradient(135deg,#0c2b4e,#1d546c)] px-6 py-5 text-white">
-          <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-white/70">
-              Session Planning
-            </p>
-            <h2 className="mt-1 text-2xl font-semibold">Schedule a new live session</h2>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-white/20 px-3 py-1 text-sm text-white/80 transition hover:bg-white/10 hover:text-white"
-          >
-            Close
-          </button>
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <section role="dialog" aria-modal="true" aria-labelledby="session-form-title" className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+      <header className="flex items-start justify-between bg-[linear-gradient(135deg,#0c2b4e,#1d546c)] px-6 py-5 text-white"><div><p className="text-xs uppercase tracking-[0.2em] text-white/70">Mentor calendar</p><h2 id="session-form-title" className="mt-1 text-2xl font-semibold">{session ? "Edit session" : "Schedule a session"}</h2></div><button type="button" onClick={onClose} className="rounded-full border border-white/25 px-3 py-1 text-sm">Close</button></header>
+      <form onSubmit={submit} className="space-y-5 p-6">
+        <label className="block text-sm font-medium text-slate-700">Session title<input required maxLength={200} name="title" value={form.title} onChange={update} placeholder="e.g. System design office hours" className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" /></label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="text-sm font-medium text-slate-700">Program (optional)<select name="programId" value={form.programId} onChange={update} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3"><option value="">General session</option>{programs.map((program) => <option key={program.id} value={program.id}>{program.title}</option>)}</select></label>
+          <label className="text-sm font-medium text-slate-700">Duration<select name="duration" value={form.duration} onChange={update} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3">{[30, 45, 60, 90, 120].map((minutes) => <option key={minutes} value={minutes}>{minutes} minutes</option>)}</select></label>
+          <label className="text-sm font-medium text-slate-700">Date and time<input required type="datetime-local" name="scheduledAt" value={form.scheduledAt} onChange={update} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" /></label>
+          <label className="text-sm font-medium text-slate-700">Meeting link (optional)<input type="url" name="meetLink" value={form.meetLink} onChange={update} placeholder="https://meet.google.com/..." className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" /></label>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6 px-6 py-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-700">Topic</span>
-              <input
-                required
-                name="topic"
-                value={form.topic}
-                onChange={handleChange}
-                placeholder="Enter the session topic"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#1D546C] focus:ring-4 focus:ring-[#1D546C]/10"
-              />
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Course</span>
-              <select
-                name="course"
-                value={form.course}
-                onChange={handleChange}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#1D546C] focus:ring-4 focus:ring-[#1D546C]/10"
-              >
-                <option>DSA Mastery</option>
-                <option>System Design Fundamentals</option>
-                <option>Frontend Interview Prep</option>
-                <option>Backend with Node.js</option>
-              </select>
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Duration</span>
-              <select
-                name="durationMin"
-                value={form.durationMin}
-                onChange={handleChange}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#1D546C] focus:ring-4 focus:ring-[#1D546C]/10"
-              >
-                <option value={45}>45 minutes</option>
-                <option value={60}>60 minutes</option>
-                <option value={90}>90 minutes</option>
-                <option value={120}>120 minutes</option>
-              </select>
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Date</span>
-              <input
-                required
-                type="date"
-                name="date"
-                value={form.date}
-                onChange={handleChange}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#1D546C] focus:ring-4 focus:ring-[#1D546C]/10"
-              />
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Start time</span>
-              <input
-                required
-                type="time"
-                name="time"
-                value={form.time}
-                onChange={handleChange}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#1D546C] focus:ring-4 focus:ring-[#1D546C]/10"
-              />
-            </label>
-
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-700">Expected attendees</span>
-              <input
-                min={1}
-                type="number"
-                name="attendees"
-                value={form.attendees}
-                onChange={handleChange}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#1D546C] focus:ring-4 focus:ring-[#1D546C]/10"
-              />
-            </label>
-          </div>
-
-          <div className="rounded-3xl bg-slate-50 px-4 py-4 text-sm text-slate-600">
-            This session will be stored locally in your browser so you can keep iterating on the frontend workflow without needing a backend yet.
-          </div>
-
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="rounded-2xl bg-[#0C2B4E] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#143D6B]"
-            >
-              Create Session
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+        {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
+        <div className="flex justify-end gap-3"><button type="button" onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm">Cancel</button><button disabled={isSaving} className="rounded-xl bg-[#0C2B4E] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{isSaving ? "Saving…" : session ? "Save changes" : "Schedule session"}</button></div>
+      </form>
+    </section>
+  </div>;
 }
 
 export default SessionComposerModal;
