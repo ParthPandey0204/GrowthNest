@@ -4,6 +4,7 @@ const programController = require('../controllers/programController');
 const lessonController = require('../controllers/lessonController');
 const enrollmentController = require('../controllers/enrollmentController');
 const authMiddleware = require('../middleware/authMiddleware');
+const optionalAuthMiddleware = require('../middleware/optionalAuthMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
 const handleValidation = require('../middleware/validationMiddleware');
 const {
@@ -28,7 +29,7 @@ router.get('/', listProgramsValidation, handleValidation, programController.list
 router.get('/mine', authMiddleware, roleMiddleware('MENTOR'), listProgramsValidation, handleValidation, programController.listMyPrograms);
 router.get('/mine/:id', authMiddleware, roleMiddleware('MENTOR'), programController.getMyProgramById);
 
-router.get('/:id', programController.getProgramById);
+router.get('/:id', optionalAuthMiddleware, programController.getProgramById);
 
 router.get('/:id/analytics', authMiddleware, programController.getProgramAnalytics);
 

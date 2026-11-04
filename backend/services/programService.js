@@ -79,18 +79,24 @@ const listMentorPrograms = async ({ mentorId, page = 1, limit = 10 }) => {
   };
 };
 
-const getProgramById = async (id) => {
-  return await prisma.program.findFirst({
+const getProgramById = async (id, user) => {
+  const program = await prisma.program.findFirst({
     where: {
       id,
       status: 'ACTIVE',
     },
     include: {
       mentor: { select: mentorPublicSelect },
-      lessons: { orderBy: { order: 'asc' } },
+      lessons: { orderBy: { order: 'asc' }, select: { id: true, title: true, topic: true, type: true, order: true } },
       assignments: { where: { status: 'PUBLISHED' }, orderBy: { createdAt: 'asc' }, select: { id: true, title: true, description: true, dueAt: true, topic: true } },
     },
   });
+  if (!program || !user) return program;
+  const enrolled = await prisma.enrollment.findFirst({ where: { programId: id, userId: user.id, status: 'ACTIVE' }, select: { id: true } });
+  if (user.role === 'ADMIN' || program.mentorId === user.id || enrolled) {
+    program.lessons = await prisma.lesson.findMany({ where: { programId: id }, orderBy: { order: 'asc' } });
+  }
+  return program;
 };
 
 const getMentorProgramById = async (id, mentorId) => {
@@ -118,6 +124,12 @@ const updateProgram = async (id, userId, { title, description, price, thumbnail,
 
   if (existingProgram.mentorId !== userId) {
     const error = new Error('Forbidden: You do not own this program');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (status === 'ACTIVE' && existingProgram.status !== 'ACTIVE') {
+    const error = new Error('Programs must be approved by an admin before publication');
     error.statusCode = 403;
     throw error;
   }

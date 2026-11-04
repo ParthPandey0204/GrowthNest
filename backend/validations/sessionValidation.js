@@ -6,7 +6,7 @@ const scheduleSessionValidation = [
   body('title').trim().notEmpty().isLength({ max: 200 }),
   body('scheduledAt').isISO8601().withMessage('scheduledAt must be a valid date'),
   body('duration').isInt({ min: 1, max: 1440 }).withMessage('duration must be between 1 and 1440 minutes').toInt(),
-  body('meetLink').optional({ values: 'falsy' }).isURL().withMessage('meetLink must be a valid URL'),
+  body('meetLink').trim().notEmpty().withMessage('A meeting link is required').isURL().withMessage('meetLink must be a valid URL'),
   body('programId').optional({ values: 'falsy' }).isString().trim(),
 ];
 

@@ -16,7 +16,7 @@ function Dashboard() {
   const { data: mentorStats } = useQuery({ queryKey: ["mentor-stats"], queryFn: getMentorStats });
   const stats = [
     { title: "Total Learners", value: mentorStats?.stats.totalLearners ?? 0, change: 0, trend: "up", icon: UsersIcon, color: "blue" },
-    { title: "Revenue", value: mentorStats?.stats.revenue ?? 0, change: 0, trend: "up", icon: CurrencyDollarIcon, color: "green" },
+    { title: "Potential Revenue", value: mentorStats?.stats.potentialRevenue ?? 0, change: 0, trend: "up", icon: CurrencyDollarIcon, color: "green" },
     { title: "Live Sessions", value: mentorStats?.stats.sessionCount ?? 0, change: 0, trend: "up", icon: ClockIcon, color: "orange" },
     { title: "Avg Completion", value: `${mentorStats?.stats.avgCompletion ?? 0}%`, change: 0, trend: "up", icon: PlayIcon, color: "purple" },
   ];

@@ -12,6 +12,7 @@ const mentorRoutes = require('./mentorRoutes');
 const adminRoutes = require('./adminRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const notificationRoutes = require('./notificationRoutes');
+const messageRoutes = require('./messageRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/programs', programRoutes);
@@ -24,5 +25,6 @@ router.use('/mentor', mentorRoutes);
 router.use('/admin', adminRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/messages', messageRoutes);
 
 module.exports = router;

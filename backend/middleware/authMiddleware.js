@@ -21,6 +21,7 @@ const authMiddleware = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({ message: 'Invalid authentication token' });
     }
+    if ((payload.tokenVersion || 0) !== user.tokenVersion) return res.status(401).json({ message: 'Authentication token has been revoked' });
 
     if (!user.isActive) {
       return res.status(403).json({ message: 'This account has been suspended' });

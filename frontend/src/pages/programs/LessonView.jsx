@@ -110,7 +110,7 @@ function LessonView() {
           {currentLesson.type === 'VIDEO' ? (
             <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-lg mb-8">
               <video 
-                src={currentLesson.content || 'https://res.cloudinary.com/demo/video/upload/v1355938833/elephants.mp4'} 
+                src={currentLesson.videoUrl || currentLesson.content || 'https://res.cloudinary.com/demo/video/upload/v1355938833/elephants.mp4'}
                 controls 
                 className="w-full h-full object-contain"
                 controlsList="nodownload"

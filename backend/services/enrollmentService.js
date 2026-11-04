@@ -101,6 +101,7 @@ const getProgramEnrollmentsForMentor = async (programId, userId) => {
 const updateEnrollmentProgress = async (id, userId, progress) => {
   const existingEnrollment = await prisma.enrollment.findUnique({
     where: { id },
+    include: { program: { select: { lessons: { select: { id: true } } } } },
   });
 
   if (!existingEnrollment) {
@@ -115,9 +116,12 @@ const updateEnrollmentProgress = async (id, userId, progress) => {
     throw error;
   }
 
-  const updateData = { progress };
+  const lessonIds = existingEnrollment.program.lessons.map(({ id: lessonId }) => lessonId);
+  const completed = lessonIds.length ? await prisma.lessonProgress.count({ where: { userId, lessonId: { in: lessonIds }, status: 'COMPLETED' } }) : 0;
+  const derivedProgress = lessonIds.length ? Math.round((completed / lessonIds.length) * 100) : 0;
+  const updateData = { progress: derivedProgress };
 
-  if (progress === 100) {
+  if (derivedProgress === 100 && lessonIds.length > 0) {
     updateData.status = 'COMPLETED';
     updateData.completedAt = new Date();
   } else if (existingEnrollment.status === 'COMPLETED' && progress < 100) {

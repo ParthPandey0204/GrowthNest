@@ -11,10 +11,13 @@ const uploadVideo = async (req, res) => {
       return res.status(400).json({ message: 'lessonId is required' });
     }
 
-    // Update the lesson with the new video URL
+    const lessonOwner = await prisma.lesson.findUnique({ where: { id: lessonId }, include: { program: { select: { mentorId: true } } } });
+    if (!lessonOwner) return res.status(404).json({ message: 'Lesson not found' });
+    if (lessonOwner.program.mentorId !== req.user.id) return res.status(403).json({ message: 'You can only upload videos to your own lessons' });
+    if (lessonOwner.type !== 'VIDEO') return res.status(400).json({ message: 'Video uploads are only allowed for video lessons' });
     const lesson = await prisma.lesson.update({
       where: { id: lessonId },
-      data: { content: req.file.path }, // Cloudinary URL is in req.file.path
+      data: { videoUrl: req.file.path },
     });
 
     return res.status(200).json({
@@ -42,6 +45,15 @@ const uploadAssignment = async (req, res) => {
       return res.status(400).json({ message: 'assignmentId is required' });
     }
 
+    const assignment = await prisma.assignment.findUnique({ where: { id: assignmentId }, include: { program: { select: { status: true } } } });
+    if (!assignment || assignment.status !== 'PUBLISHED' || (assignment.program && assignment.program.status !== 'ACTIVE')) return res.status(404).json({ message: 'Assignment not found' });
+    if (assignment.dueAt && assignment.dueAt < new Date()) return res.status(400).json({ message: 'The due date has passed' });
+    if (assignment.programId) {
+      const enrollment = await prisma.enrollment.findFirst({ where: { programId: assignment.programId, userId: req.user.id, status: 'ACTIVE' }, select: { id: true } });
+      if (!enrollment) return res.status(403).json({ message: 'You must be actively enrolled to submit this assignment' });
+    }
+    const existing = await prisma.submission.findUnique({ where: { assignmentId_userId: { userId: req.user.id, assignmentId } } });
+    if (existing?.status === 'REVIEWED') return res.status(409).json({ message: 'A reviewed submission cannot be replaced' });
     const submission = await prisma.submission.upsert({
       where: {
         assignmentId_userId: {
@@ -51,6 +63,7 @@ const uploadAssignment = async (req, res) => {
       },
       update: {
         fileUrl: req.file.path,
+        grade: null, feedback: null, reviewedAt: null, status: 'SUBMITTED', submittedAt: new Date(),
         content: content !== undefined ? content : undefined,
       },
       create: {

@@ -28,6 +28,7 @@ import RoleHomeRedirect from "./RoleHomeRedirect";
 import Unauthorized from "./Unauthorized";
 
 import CourseDetails from "../pages/courses/CourseDetails";
+import SearchResults from "../pages/search/SearchResults";
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
       >
         <Route path="/" element={<RoleHomeRedirect />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard/search" element={<SearchResults />} />
         <Route path="/dashboard/analytics" element={<Analytics />} />
         <Route path="/dashboard/courses" element={<Courses />} />
         <Route

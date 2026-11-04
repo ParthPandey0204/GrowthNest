@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../prisma/client');
 
 const jwtSecret = process.env.JWT_SECRET;
-const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '7d';
+const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '1h';
 
 const sanitizeUser = ({ password, ...user }) => user;
 
@@ -17,6 +17,7 @@ const signToken = (user) => {
       sub: user.id,
       email: user.email,
       role: user.role,
+      tokenVersion: user.tokenVersion || 0,
     },
     jwtSecret,
     { expiresIn: jwtExpiresIn }

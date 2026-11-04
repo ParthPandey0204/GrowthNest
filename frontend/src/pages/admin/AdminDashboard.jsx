@@ -36,8 +36,8 @@ export default function AdminDashboard() {
           <p className="mt-2 text-4xl font-bold text-[#0C2B4E]">{stats?.totalPrograms || 0}</p>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center">
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Est. Revenue</p>
-          <p className="mt-2 text-4xl font-bold text-emerald-600">₹{stats?.totalRevenue?.toLocaleString() || 0}</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Potential Revenue</p>
+          <p className="mt-2 text-4xl font-bold text-emerald-600">₹{stats?.potentialRevenue?.toLocaleString() || 0}</p>
         </div>
       </div>
 

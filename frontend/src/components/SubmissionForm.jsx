@@ -26,13 +26,8 @@ export default function SubmissionForm({ assignmentId, onSubmitted }) {
     setProgress(0);
 
     try {
-      const formData = new FormData();
-      formData.append("assignmentId", assignmentId);
-      if (content) formData.append("content", content);
-      if (file) formData.append("file", file);
-
       await submitMutation.mutateAsync({
-        formData,
+        ...(file ? { formData: (() => { const data = new FormData(); data.append("assignmentId", assignmentId); if (content) data.append("content", content); data.append("file", file); return data; })() } : { payload: { assignmentId, content } }),
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setProgress(percentCompleted);

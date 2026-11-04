@@ -41,7 +41,7 @@ const listMyPrograms = async (req, res) => {
 
 const getProgramById = async (req, res) => {
   try {
-    const program = await programService.getProgramById(req.params.id);
+    const program = await programService.getProgramById(req.params.id, req.user);
     if (!program) {
       return res.status(404).json({ message: 'Program not found' });
     }
@@ -56,6 +56,7 @@ const getMyProgramById = async (req, res) => {
   try {
     const program = await programService.getMentorProgramById(req.params.id, req.user.id);
     if (!program) return res.status(404).json({ message: 'Program not found' });
+    if (req.user.role !== 'ADMIN' && program.mentorId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
     return res.status(200).json({ program });
   } catch (error) {
     console.error('Get mentor program error:', error);
@@ -108,12 +109,13 @@ const getProgramAnalytics = async (req, res) => {
       },
     });
     if (!program) return res.status(404).json({ message: 'Program not found' });
+    if (req.user.role !== 'ADMIN' && program.mentorId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
 
     const learners = program.enrollments.length;
     const revenue = Number(program.price || 0) * learners;
     return res.status(200).json({
       engagement: [{ date: `Last ${range} days`, engagementScore: learners ? Math.round(program.enrollments.reduce((sum, item) => sum + item.progress, 0) / learners) : 0 }],
-      revenue: [{ date: `Last ${range} days`, revenue }],
+      revenue: [{ date: `Last ${range} days`, revenue, label: 'Potential revenue' }],
       coursePerformance: [{ courseName: program.title, learners }],
       sessions: program.sessions.map((session) => ({ session: session.title, attendees: session._count.attendees })),
     });

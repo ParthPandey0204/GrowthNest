@@ -31,7 +31,7 @@ const createSession = async (mentorId, data) => {
           userId,
           type: 'SESSION',
           title: 'New live session scheduled',
-          body: `${session.title} starts on ${session.startsAt.toLocaleString()}. The meeting link will open Google Meet or Zoom outside GrowthNest.`,
+          body: `${session.title} starts on ${session.startsAt.toISOString()}. The meeting link will open Google Meet or Zoom outside GrowthNest.`,
         })),
       });
     }
@@ -96,7 +96,7 @@ const attendSession = async (id, userId) => {
   const existing = await prisma.session.findUnique({ where: { id }, include: { program: { select: { enrollments: { where: { userId, status: 'ACTIVE' }, select: { id: true } } } } } });
   if (!existing) throw notFound('Session not found');
   if (!['SCHEDULED', 'LIVE'].includes(existing.status)) throw Object.assign(new Error('Cannot mark attendance for this session right now'), { statusCode: 400 });
-  if (existing.programId && !existing.program?.enrollments.length) throw forbidden('You must be actively enrolled in this program to attend');
+  if (!existing.programId || !existing.program?.enrollments.length) throw forbidden('You must be actively enrolled in a program to attend');
   return prisma.session.update({ where: { id }, data: { attendees: { connect: { id: userId } } }, include: { attendees: { select: { id: true, name: true } } } });
 };
 

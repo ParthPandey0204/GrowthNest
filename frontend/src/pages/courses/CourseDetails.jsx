@@ -136,6 +136,7 @@ export default function CourseDetails() {
 
   /* Handlers */
   const handlePublishToggle = () => {
+    if (course.status === "active" && !window.confirm("Unpublishing this course will hide it from learners and prevent new enrollments. Existing learners will lose access to the course. Do you want to continue?")) return;
     const newStatus = course.status === "active" ? "DRAFT" : "ACTIVE";
     updateCourse.mutate(
       { id: courseId, payload: { status: newStatus } },

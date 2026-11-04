@@ -5,12 +5,13 @@ const prisma = require('./client');
 
 async function main() {
   const adminEmail = 'admin@growthnest.com';
-  const adminPassword = await bcrypt.hash('admin123', 10);
+  const configuredPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!configuredPassword) throw new Error('SEED_ADMIN_PASSWORD must be set to seed the admin account');
+  const adminPassword = await bcrypt.hash(configuredPassword, 10);
 
   const adminUser = await prisma.user.upsert({
     where: { email: adminEmail },
     update: {
-      password: adminPassword,
       role: 'ADMIN',
       isActive: true,
       isApproved: true,

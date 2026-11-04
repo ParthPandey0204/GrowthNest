@@ -50,7 +50,7 @@ const getMentorStats = async (req, res) => {
     res.status(200).json({
       stats: {
         totalLearners,
-        revenue,
+        potentialRevenue: revenue,
         sessionCount,
         avgCompletion,
       },
@@ -71,7 +71,7 @@ const getMentorStats = async (req, res) => {
     });
   } catch (error) {
     console.error('Get mentor stats error:', error);
-    res.status(500).json({ message: 'Failed to fetch mentor stats', error: error.message });
+    res.status(500).json({ message: 'Failed to fetch mentor stats' });
   }
 };
 

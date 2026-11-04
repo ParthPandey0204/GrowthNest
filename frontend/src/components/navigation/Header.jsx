@@ -2,16 +2,19 @@ import { useAuth } from "../../store/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { getMyNotifications } from "../../api/notifications.api";
+import { getMyNotifications, markNotificationRead } from "../../api/notifications.api";
+import { logoutRequest } from "../../api/auth.api";
 
 function Header({ onMenuToggle }) {
   const { user, logout } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const { data: notificationData } = useQuery({ queryKey: ["notifications"], queryFn: getMyNotifications, enabled: Boolean(user) });
   const notifications = notificationData?.notifications ?? [];
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try { await logoutRequest(); } catch { /* Local sign-out still clears this browser session. */ }
     logout();
     queryClient.clear();
     navigate("/login", { replace: true });
@@ -19,6 +22,12 @@ function Header({ onMenuToggle }) {
   const displayName = user?.name || "GrowthNest User";
   const firstName = displayName.trim().split(/\s+/)[0];
   const displayRole = user?.role || "Member";
+  const submitSearch = (event) => {
+    event.preventDefault();
+    const query = search.trim();
+    if (!query) return;
+    navigate(`/dashboard/search?q=${encodeURIComponent(query)}`);
+  };
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-[linear-gradient(135deg,#081c35,#0f3259_58%,#184c77)] shadow-[0_18px_40px_rgba(8,28,53,0.18)] backdrop-blur">
@@ -26,7 +35,6 @@ function Header({ onMenuToggle }) {
         <div className="flex items-center gap-3">
           <div className="relative"><button
             type="button"
-            onClick={() => setIsNotificationsOpen((open) => !open)}
             onClick={onMenuToggle}
             className="rounded-xl border border-white/10 bg-white/5 p-2 text-white transition hover:bg-white/12 md:hidden"
             aria-label="Open navigation menu"
@@ -51,13 +59,16 @@ function Header({ onMenuToggle }) {
 
         <form
           role="search"
-          className="hidden flex-1 items-center sm:flex"
-          onSubmit={(e) => e.preventDefault()}
+          className="flex flex-1 items-center"
+          onSubmit={submitSearch}
         >
           <div className="ml-4 mr-2 flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-white/10 bg-white/8 px-4 py-2.5 shadow-inner shadow-slate-950/10 backdrop-blur">
             <span className="text-sm text-sky-100/70">&#128269;</span>
             <input
               type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              aria-label="Search courses, learners, or sessions"
               placeholder="Search courses, learners, or sessions"
               className="w-full bg-transparent text-sm text-white outline-none placeholder:text-sky-100/55"
             />
@@ -72,6 +83,7 @@ function Header({ onMenuToggle }) {
 
         <button
           type="button"
+          onClick={() => navigate("/dashboard/search")}
           className="ml-auto rounded-xl border border-white/10 bg-white/5 p-2 text-white transition hover:bg-white/12 sm:hidden"
           aria-label="Search"
         >
@@ -82,6 +94,7 @@ function Header({ onMenuToggle }) {
           {user?.role !== "STUDENT" && (
             <button
               type="button"
+              onClick={() => navigate("/dashboard/sessions")}
               className="rounded-2xl bg-[linear-gradient(135deg,#f4b63d,#ffdf8f)] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-950 shadow-lg shadow-amber-200/30 transition hover:-translate-y-0.5 hover:shadow-xl"
             >
               Schedule Session
@@ -90,6 +103,7 @@ function Header({ onMenuToggle }) {
 
           <button
             type="button"
+            onClick={() => setIsNotificationsOpen((open) => !open)}
             className="relative rounded-2xl border border-white/10 bg-white/6 p-2.5 text-white transition hover:bg-white/12"
             aria-label="Notifications"
           >
@@ -107,7 +121,7 @@ function Header({ onMenuToggle }) {
               <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5" />
               <path d="M10 19a2 2 0 0 0 4 0" />
             </svg>
-          </button>{isNotificationsOpen && <div className="absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-2xl"><div className="border-b border-slate-100 px-4 py-3"><p className="font-semibold">Notifications</p></div><div className="max-h-80 overflow-y-auto">{notifications.length ? notifications.map((notification) => <div key={notification.id} className="border-b border-slate-100 px-4 py-3 text-sm"><p className="font-semibold">{notification.title}</p><p className="mt-1 text-slate-600">{notification.body}</p><p className="mt-2 text-xs text-slate-400">{new Date(notification.createdAt).toLocaleString()}</p></div>) : <p className="p-4 text-sm text-slate-500">No new notifications.</p>}</div></div>}</div>
+          </button>{isNotificationsOpen && <div className="absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-2xl"><div className="border-b border-slate-100 px-4 py-3"><p className="font-semibold">Notifications</p></div><div className="max-h-80 overflow-y-auto">{notifications.length ? notifications.map((notification) => <button type="button" key={notification.id} onClick={async () => { if (!notification.readAt) { await markNotificationRead(notification.id); queryClient.invalidateQueries({ queryKey: ["notifications"] }); } }} className="block w-full border-b border-slate-100 px-4 py-3 text-left text-sm hover:bg-slate-50"><p className="font-semibold">{notification.title}{!notification.readAt && <span className="ml-2 text-sky-700">• New</span>}</p><p className="mt-1 text-slate-600">{notification.body}</p><p className="mt-2 text-xs text-slate-400">{new Date(notification.createdAt).toLocaleString()}</p></button>) : <p className="p-4 text-sm text-slate-500">No notifications.</p>}</div></div>}</div>
 
           <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/6 px-3 py-2 text-white backdrop-blur">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/12 text-sm font-semibold">

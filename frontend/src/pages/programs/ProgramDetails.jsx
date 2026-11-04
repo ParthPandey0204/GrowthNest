@@ -1,8 +1,9 @@
 import { Link, useParams } from "react-router-dom";
-import { useCourse, useMyCourse, useUpdateCourse } from "../../services/course.service";
+import { useCourse, useMyCourse } from "../../services/course.service";
 import { useEnrollProgram, useMyEnrollments } from "../../services/enrollment.service";
 import { useAuth } from "../../store/AuthContext";
 import CreateLessonForm from "../../components/CreateLessonForm";
+import MentorAssignmentReview from "../../components/MentorAssignmentReview";
 import { useMemo, useState } from "react";
 
 function ProgramDetails() {
@@ -20,7 +21,6 @@ function ProgramDetails() {
   const refetch = () => {
     return programQuery.refetch();
   };
-  const updateCourse = useUpdateCourse();
   const [isLessonFormOpen, setIsLessonFormOpen] = useState(false);
   const { data: enrollments = [] } = useMyEnrollments();
   const enrollProgram = useEnrollProgram();
@@ -48,13 +48,12 @@ function ProgramDetails() {
         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-100/70">Mentor-led program</p>
         <h1 className="mt-2 text-3xl font-semibold">{program.title}</h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-sky-50/85">{program.description || "Build practical skills with structured lessons and mentor support."}</p>
-        <div className="mt-6 flex flex-wrap items-center gap-4"><span className="text-sm font-semibold">{program.price ? `₹${program.price}` : "Free"}</span>{isProgramMentor ? <><span className="rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium">{program.status === "draft" ? "Draft — learners cannot see it yet" : "Published"}</span>{program.status === "draft" && <button onClick={() => updateCourse.mutate({ id, payload: { status: "ACTIVE" } }, { onSuccess: refetch })} disabled={updateCourse.isPending} className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#0C2B4E] disabled:opacity-65">{updateCourse.isPending ? "Publishing..." : "Publish course"}</button>}</> : <button onClick={() => enrollProgram.mutate(id)} disabled={isEnrolled || enrollProgram.isPending} className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#0C2B4E] disabled:cursor-not-allowed disabled:opacity-65">{isEnrolled ? "Enrolled" : enrollProgram.isPending ? "Enrolling..." : "Enrol now"}</button>}</div>
+        <div className="mt-6 flex flex-wrap items-center gap-4"><span className="text-sm font-semibold">{program.price ? `₹${program.price}` : "Free"}</span>{isProgramMentor ? <span className="rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium">{program.status === "DRAFT" ? "Draft — awaiting admin approval" : "Published"}</span> : <button onClick={() => enrollProgram.mutate(id)} disabled={isEnrolled || enrollProgram.isPending} className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#0C2B4E] disabled:cursor-not-allowed disabled:opacity-65">{isEnrolled ? "Enrolled" : enrollProgram.isPending ? "Enrolling..." : "Enrol now"}</button>}</div>
         {enrollProgram.error && <p className="mt-3 text-sm text-rose-200">{enrollProgram.error.message || "Unable to enrol. Please try again."}</p>}
-        {updateCourse.error && <p className="mt-3 text-sm text-rose-200">{updateCourse.error.message || "Unable to publish the course."}</p>}
       </section>
       <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
         <section className="rounded-3xl border border-slate-200 bg-white p-6"><div className="flex items-center justify-between gap-3"><div><h2 className="text-xl font-semibold text-slate-900">Curriculum</h2><p className="mt-1 text-sm text-slate-500">Organize your course into topics, then place videos, articles, and assignments inside each one.</p></div>{isProgramMentor && <button onClick={() => setIsLessonFormOpen((open) => !open)} className="rounded-xl bg-[#0C2B4E] px-3 py-2 text-sm font-semibold text-white">{isLessonFormOpen ? "Close" : "+ Add curriculum item"}</button>}</div>{isLessonFormOpen && <div className="mt-4"><CreateLessonForm programId={id} topics={curriculum.map(([topic]) => topic)} onCreated={() => { setIsLessonFormOpen(false); refetch(); }} /></div>}<div className="mt-5 space-y-5">{curriculum.length ? curriculum.map(([topic, items], topicIndex) => <section key={topic} className="overflow-hidden rounded-2xl border border-slate-200"><div className="bg-slate-50 px-4 py-3"><p className="text-xs font-semibold uppercase tracking-wide text-[#1D546C]">Topic {topicIndex + 1} · {items.length} item{items.length === 1 ? "" : "s"}</p><h3 className="mt-1 font-semibold text-slate-900">{topic}</h3></div><div className="divide-y divide-slate-100">{items.map((item) => item.kind === "assignment" ? <div key={item.id} className="flex items-center justify-between px-4 py-3 text-sm"><span><span className="mr-2 rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">Assignment</span>{item.title}</span><span className="text-xs text-slate-500">{item.dueAt ? `Due ${new Date(item.dueAt).toLocaleDateString()}` : "No due date"}</span></div> : <Link to={`/programs/${id}/lessons/${item.id}`} key={item.id} className="flex items-center justify-between px-4 py-3 text-sm hover:bg-slate-50"><span><span className={`mr-2 rounded px-2 py-1 text-xs font-semibold ${item.kind === "video" ? "bg-sky-100 text-sky-800" : "bg-emerald-100 text-emerald-800"}`}>{item.kind === "video" ? "Video" : "Article"}</span>{item.title}</span><span className="text-[#1D546C]">Open →</span></Link>)}</div></section>) : <p className="text-sm text-slate-500">Start building the course by creating your first topic and adding content to it.</p>}</div></section>
-        <aside className="rounded-3xl border border-slate-200 bg-white p-6"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Your mentor</p><h2 className="mt-2 text-xl font-semibold text-slate-900">{program.mentor?.name ?? "GrowthNest Mentor"}</h2><p className="mt-3 text-sm leading-6 text-slate-600">{program.mentor?.bio || "Your mentor will guide you through every stage of this program."}</p></aside>
+        <aside className="space-y-5"><section className="rounded-3xl border border-slate-200 bg-white p-6"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Your mentor</p><h2 className="mt-2 text-xl font-semibold text-slate-900">{program.mentor?.name ?? "GrowthNest Mentor"}</h2><p className="mt-3 text-sm leading-6 text-slate-600">{program.mentor?.bio || "Your mentor will guide you through every stage of this program."}</p></section>{isProgramMentor && program.assignments?.length > 0 && <section className="space-y-3 rounded-3xl border border-slate-200 bg-white p-5"><h2 className="font-semibold">Learner submissions</h2>{program.assignments.map((assignment) => <MentorAssignmentReview key={assignment.id} assignment={assignment} />)}</section>}</aside>
       </div>
     </div>
   );

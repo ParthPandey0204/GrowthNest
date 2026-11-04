@@ -31,7 +31,7 @@ const createAssignment = async (userId, { title, description, dueDate, programId
 };
 
 const listAssignments = async (programId, user) => {
-  const where = user.role === 'MENTOR' ? { program: { mentorId: user.id } } : {};
+  const where = user.role === 'MENTOR' ? { program: { mentorId: user.id } } : user.role === 'STUDENT' ? { status: 'PUBLISHED', program: { status: 'ACTIVE', enrollments: { some: { userId: user.id, status: 'ACTIVE' } } } } : { status: 'PUBLISHED', program: { status: 'ACTIVE' } };
 
   if (programId) {
     const program = await prisma.program.findUnique({
@@ -44,7 +44,7 @@ const listAssignments = async (programId, user) => {
       throw error;
     }
 
-    where.programId = programId;
+    if (user.role !== 'STUDENT') where.programId = programId;
   }
 
   return await prisma.assignment.findMany({

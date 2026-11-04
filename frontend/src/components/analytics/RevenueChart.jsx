@@ -14,7 +14,7 @@ function RevenueChart({ data }) {
       style={{ height: "320px" }}
     >
       <h3 className="mb-3 text-lg font-semibold text-gray-800">
-        Revenue Over Time
+        Potential Revenue Over Time
       </h3>
 
       <ResponsiveContainer width="100%" height="85%">

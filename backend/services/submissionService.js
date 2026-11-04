@@ -11,11 +11,17 @@ const submitAssignment = async (userId, { assignmentId, content, fileUrl, file }
     error.statusCode = 404;
     throw error;
   }
+  if (assignment.status !== 'PUBLISHED' || (assignment.programId && !(await prisma.program.findFirst({ where: { id: assignment.programId, status: 'ACTIVE' }, select: { id: true } })))) {
+    const error = new Error('Assignment is not available'); error.statusCode = 404; throw error;
+  }
+  if (assignment.dueAt && assignment.dueAt < new Date()) { const error = new Error('The due date has passed'); error.statusCode = 400; throw error; }
+  if (assignment.programId && !(await prisma.enrollment.findFirst({ where: { programId: assignment.programId, userId, status: 'ACTIVE' }, select: { id: true } }))) { const error = new Error('You must be actively enrolled to submit this assignment'); error.statusCode = 403; throw error; }
 
   let uploadedFileUrl = fileUrl || null;
   if (file) {
     uploadedFileUrl = `/uploads/${file.filename}`;
   }
+  if (fileUrl && !/^https:\/\/(res\.cloudinary\.com)\/[\w,./-]+$/i.test(fileUrl)) { const error = new Error('fileUrl must be a valid Cloudinary URL'); error.statusCode = 400; throw error; }
 
   if (!content && !uploadedFileUrl) {
     const error = new Error('Either content, fileUrl, or a file upload is required');
@@ -23,6 +29,8 @@ const submitAssignment = async (userId, { assignmentId, content, fileUrl, file }
     throw error;
   }
 
+  const previous = await prisma.submission.findUnique({ where: { assignmentId_userId: { assignmentId, userId } } });
+  if (previous?.status === 'REVIEWED') { const error = new Error('A reviewed submission cannot be replaced'); error.statusCode = 409; throw error; }
   return await prisma.submission.upsert({
     where: {
       assignmentId_userId: {
@@ -34,6 +42,7 @@ const submitAssignment = async (userId, { assignmentId, content, fileUrl, file }
       content: content || null,
       fileUrl: uploadedFileUrl,
       status: 'SUBMITTED',
+      grade: null, feedback: null, reviewedAt: null,
       submittedAt: new Date(),
     },
     create: {
@@ -69,7 +78,7 @@ const getAssignmentSubmissionsForMentor = async (assignmentId, userId) => {
     throw error;
   }
 
-  if (assignment.program && assignment.program.mentorId !== userId) {
+  if (!assignment.program || assignment.program.mentorId !== userId) {
     const error = new Error('Forbidden: You do not own the program for this assignment');
     error.statusCode = 403;
     throw error;
@@ -129,7 +138,7 @@ const reviewSubmission = async (id, userId, { grade, score, feedback, status }) 
   }
 
   if (
-    existingSubmission.assignment.program &&
+    !existingSubmission.assignment.program ||
     existingSubmission.assignment.program.mentorId !== userId
   ) {
     const error = new Error('Forbidden: You do not own the program for this assignment');

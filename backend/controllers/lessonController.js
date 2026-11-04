@@ -24,7 +24,7 @@ const createLesson = async (req, res) => {
 
 const getLessonsByProgramId = async (req, res) => {
   try {
-    const lessons = await lessonService.getLessonsByProgramId(req.params.id);
+    const lessons = await lessonService.getLessonsByProgramId(req.params.id, req.user);
     return res.status(200).json({ lessons });
   } catch (error) {
     console.error('List lessons error:', error);

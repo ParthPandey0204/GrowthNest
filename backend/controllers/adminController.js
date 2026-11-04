@@ -56,7 +56,7 @@ const getUsers = async (req, res) => {
     });
   } catch (error) {
     console.error('Get admin users error:', error);
-    res.status(500).json({ message: 'Failed to fetch users', error: error.message });
+    res.status(500).json({ message: 'Failed to fetch users' });
   }
 };
 
@@ -68,10 +68,14 @@ const changeUserRole = async (req, res) => {
     if (!['STUDENT', 'MENTOR', 'ADMIN'].includes(role)) {
       return res.status(400).json({ message: 'Invalid role' });
     }
+    if (id === req.user.id) return res.status(400).json({ message: 'You cannot change your own role' });
+    const current = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true } });
+    if (!current) return res.status(404).json({ message: 'User not found' });
+    if (role === 'MENTOR' && current.role !== 'MENTOR') return res.status(400).json({ message: 'Use mentor approval to grant mentor access' });
 
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: { role },
+      data: { role, tokenVersion: { increment: 1 } }, select: { id: true, name: true, email: true, role: true, isActive: true, isApproved: true },
     });
 
     res.status(200).json({ message: 'User role updated successfully', user: updatedUser });
@@ -96,10 +100,11 @@ const approveMentor = async (req, res) => {
     if (!mentor) {
       return res.status(404).json({ message: 'Mentor not found' });
     }
+    if (id === req.user.id) return res.status(400).json({ message: 'You cannot modify your own account' });
 
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: { isApproved: true },
+      data: { isApproved: true }, select: { id: true, name: true, email: true, role: true, isActive: true, isApproved: true },
     });
 
     res.status(200).json({ message: 'Mentor approved successfully', user: updatedUser });
@@ -120,10 +125,11 @@ const toggleUserStatus = async (req, res) => {
     if (typeof isActive !== 'boolean') {
       return res.status(400).json({ message: 'isActive must be a boolean' });
     }
+    if (id === req.user.id) return res.status(400).json({ message: 'You cannot modify your own account' });
 
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: { isActive },
+      data: { isActive, tokenVersion: { increment: 1 } }, select: { id: true, name: true, email: true, role: true, isActive: true, isApproved: true },
     });
 
     res.status(200).json({ message: `User ${isActive ? 'activated' : 'suspended'} successfully`, user: updatedUser });
@@ -141,49 +147,42 @@ const getDashboardStats = async (req, res) => {
     const totalUsers = await prisma.user.count();
     const totalPrograms = await prisma.program.count();
 
-    // Approximate revenue by joining enrollments with program price
-    const enrollments = await prisma.enrollment.findMany({
-      include: { program: { select: { price: true } } }
-    });
-    const totalRevenue = enrollments.reduce((sum, enroll) => {
-      const price = enroll.program?.price ? parseFloat(enroll.program.price) : 0;
-      return sum + price;
-    }, 0);
+    const revenueRows = await prisma.$queryRaw`SELECT COALESCE(SUM(p.price), 0)::float AS total FROM "Enrollment" e JOIN "Program" p ON p.id = e."programId"`;
+    const potentialRevenue = revenueRows[0]?.total || 0;
 
     // Monthly Growth (mock simple aggregation for chart: users & enrollments over last 6 months)
-    const monthlyGrowth = [];
+    const months = [];
     for (let i = 5; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const monthStr = date.toLocaleString('default', { month: 'short' });
       const yearStr = date.getFullYear().toString().substr(-2);
-
-      const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-      const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-
-      const usersThisMonth = await prisma.user.count({
-        where: { createdAt: { gte: startOfMonth, lte: endOfMonth } }
-      });
-      const enrollmentsThisMonth = await prisma.enrollment.count({
-        where: { enrolledAt: { gte: startOfMonth, lte: endOfMonth } }
-      });
-
-      monthlyGrowth.push({
+      months.push({
         name: `${monthStr} '${yearStr}`,
-        users: usersThisMonth,
-        enrollments: enrollmentsThisMonth
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
       });
     }
+    const firstMonth = new Date(months[0].year, months[0].month - 1, 1);
+    const nextMonth = new Date(months[months.length - 1].year, months[months.length - 1].month, 1);
+    const [userGroups, enrollmentGroups] = await Promise.all([
+      prisma.$queryRaw`SELECT EXTRACT(YEAR FROM "createdAt")::int AS year, EXTRACT(MONTH FROM "createdAt")::int AS month, COUNT(*)::int AS count FROM "User" WHERE "createdAt" >= ${firstMonth} AND "createdAt" < ${nextMonth} GROUP BY 1, 2`,
+      prisma.$queryRaw`SELECT EXTRACT(YEAR FROM "enrolledAt")::int AS year, EXTRACT(MONTH FROM "enrolledAt")::int AS month, COUNT(*)::int AS count FROM "Enrollment" WHERE "enrolledAt" >= ${firstMonth} AND "enrolledAt" < ${nextMonth} GROUP BY 1, 2`,
+    ]);
+    const monthCounts = (rows) => new Map(rows.map((row) => [`${row.year}-${row.month}`, row.count]));
+    const usersByMonth = monthCounts(userGroups);
+    const enrollmentsByMonth = monthCounts(enrollmentGroups);
+    const monthlyGrowth = months.map(({ name, year, month }) => ({ name, users: usersByMonth.get(`${year}-${month}`) || 0, enrollments: enrollmentsByMonth.get(`${year}-${month}`) || 0 }));
 
     res.status(200).json({
       totalUsers,
       totalPrograms,
-      totalRevenue,
+      potentialRevenue,
       monthlyGrowth
     });
   } catch (error) {
     console.error('Get dashboard stats error:', error);
-    res.status(500).json({ message: 'Failed to fetch dashboard stats', error: error.message });
+    res.status(500).json({ message: 'Failed to fetch dashboard stats' });
   }
 };
 
@@ -218,7 +217,7 @@ const getActivityLog = async (req, res) => {
     res.status(200).json(activities.slice(0, 10));
   } catch (error) {
     console.error('Get activity log error:', error);
-    res.status(500).json({ message: 'Failed to fetch activity log', error: error.message });
+    res.status(500).json({ message: 'Failed to fetch activity log' });
   }
 };
 
