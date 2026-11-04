@@ -7,7 +7,8 @@ import {
 } from "../../services/course.service";
 import CreateLessonForm from "../../components/CreateLessonForm";
 import { getCourseEnrollments } from "../../api/courses.api";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { submitCourseForReview } from "../../api/courses.api";
 
 /* ─── Small helpers ────────────────────────────────────────────────── */
 
@@ -89,6 +90,7 @@ export default function CourseDetails() {
 
   const updateCourse = useUpdateCourse();
   const deleteLesson = useDeleteLesson();
+  const reviewMutation = useMutation({ mutationFn: submitCourseForReview, onSuccess: refetch });
 
   /* Enrollments (load lazily when tab is clicked) */
   const [showEnrollments, setShowEnrollments] = useState(false);
@@ -97,7 +99,7 @@ export default function CourseDetails() {
     queryFn: () => getCourseEnrollments(courseId),
     enabled: showEnrollments,
   });
-  const enrollments = enrollmentsData?.enrollments ?? [];
+  const enrollments = useMemo(() => enrollmentsData?.enrollments ?? [], [enrollmentsData?.enrollments]);
 
   /* Curriculum builder */
   const [isLessonFormOpen, setIsLessonFormOpen] = useState(false);
@@ -137,6 +139,10 @@ export default function CourseDetails() {
   /* Handlers */
   const handlePublishToggle = () => {
     if (course.status === "active" && !window.confirm("Unpublishing this course will hide it from learners and prevent new enrollments. Existing learners will lose access to the course. Do you want to continue?")) return;
+    if (course.status !== "active" && !course.isApproved) {
+      reviewMutation.mutate(courseId);
+      return;
+    }
     const newStatus = course.status === "active" ? "DRAFT" : "ACTIVE";
     updateCourse.mutate(
       { id: courseId, payload: { status: newStatus } },
@@ -309,18 +315,18 @@ export default function CourseDetails() {
               </button>
               <button
                 onClick={handlePublishToggle}
-                disabled={updateCourse.isPending}
+                disabled={updateCourse.isPending || reviewMutation.isPending}
                 className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-60 ${
                   isPublished
                     ? "border border-white/20 text-white hover:bg-white/10"
                     : "bg-white text-[#0C2B4E] hover:bg-white/90"
                 }`}
               >
-                {updateCourse.isPending
+                {reviewMutation.isPending ? "Submitting…" : updateCourse.isPending
                   ? "Saving..."
                   : isPublished
                   ? "Unpublish"
-                  : "🚀 Publish course"}
+                  : course.isApproved ? "Republish course" : course.submittedForReview ? "Review requested" : "Submit for review"}
               </button>
             </div>
           )}
@@ -331,6 +337,7 @@ export default function CourseDetails() {
             {updateCourse.error.message || "Unable to update course."}
           </p>
         )}
+        {reviewMutation.error && <p className="mt-3 text-sm text-rose-200">{reviewMutation.error.message || "Unable to submit this program for review."}</p>}
 
         {/* Stats row */}
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -503,10 +510,10 @@ export default function CourseDetails() {
             {!isPublished && (
               <button
                 onClick={handlePublishToggle}
-                disabled={updateCourse.isPending || (course.lessons?.length ?? 0) === 0}
+                disabled={updateCourse.isPending || reviewMutation.isPending || (course.lessons?.length ?? 0) === 0 || (course.submittedForReview && !course.isApproved)}
                 className="mt-5 w-full rounded-xl bg-[#0C2B4E] py-2.5 text-sm font-semibold text-white transition hover:bg-[#1D546C] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {updateCourse.isPending ? "Publishing..." : "🚀 Publish course"}
+                {reviewMutation.isPending ? "Submitting…" : updateCourse.isPending ? "Publishing..." : course.isApproved ? "Republish course" : course.submittedForReview ? "Awaiting admin review" : "Submit for review"}
               </button>
             )}
             {!isPublished && (course.lessons?.length ?? 0) === 0 && (

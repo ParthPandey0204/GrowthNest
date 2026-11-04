@@ -2,6 +2,17 @@ const prisma = require('../prisma/client');
 const { mentorPublicSelect } = require('./programService');
 const { learnerEnrollmentWhere } = require('./enrollmentAccess');
 
+const isConfiguredCloudinaryUrl = (value) => {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  if (!cloudName || typeof value !== 'string') return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname === 'res.cloudinary.com' && url.pathname.startsWith(`/${cloudName}/`) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+};
+
 const submitAssignment = async (userId, { assignmentId, content, fileUrl, file }) => {
   const assignment = await prisma.assignment.findUnique({
     where: { id: assignmentId },
@@ -22,7 +33,7 @@ const submitAssignment = async (userId, { assignmentId, content, fileUrl, file }
   if (file) {
     uploadedFileUrl = `/uploads/${file.filename}`;
   }
-  if (fileUrl && !/^https:\/\/(res\.cloudinary\.com)\/[\w,./-]+$/i.test(fileUrl)) { const error = new Error('fileUrl must be a valid Cloudinary URL'); error.statusCode = 400; throw error; }
+  if (fileUrl && !isConfiguredCloudinaryUrl(fileUrl)) { const error = new Error('fileUrl must be a Cloudinary URL from the configured account'); error.statusCode = 400; throw error; }
 
   if (!content && !uploadedFileUrl) {
     const error = new Error('Either content, fileUrl, or a file upload is required');

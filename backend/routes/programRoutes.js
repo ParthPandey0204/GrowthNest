@@ -28,6 +28,7 @@ router.get('/', listProgramsValidation, handleValidation, programController.list
 
 router.get('/mine', authMiddleware, roleMiddleware('MENTOR'), listProgramsValidation, handleValidation, programController.listMyPrograms);
 router.get('/mine/:id', authMiddleware, roleMiddleware('MENTOR'), programController.getMyProgramById);
+router.post('/:id/submit-review', authMiddleware, roleMiddleware('MENTOR'), programController.submitProgramForReview);
 
 router.get('/:id', optionalAuthMiddleware, programController.getProgramById);
 

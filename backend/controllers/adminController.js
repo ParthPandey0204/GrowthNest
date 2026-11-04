@@ -279,7 +279,7 @@ const updateProgramStatus = async (req, res) => {
 
     const updatedProgram = await prisma.program.update({
       where: { id },
-      data: { status }
+      data: { status, isApproved: status === 'ACTIVE', submittedForReview: false }
     });
 
     res.status(200).json({ message: 'Program status updated', program: updatedProgram });

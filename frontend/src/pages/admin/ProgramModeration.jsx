@@ -79,6 +79,7 @@ export default function ProgramModeration() {
                   <td className="px-6 py-4">
                     <div className="font-medium text-slate-900">{program.title}</div>
                     <div className="text-slate-500 text-xs">Price: {program.price ? `₹${program.price}` : 'Free'}</div>
+                    {program.submittedForReview && <div className="mt-1 text-xs font-semibold text-amber-700">Review requested</div>}
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-medium text-slate-900">{program.mentor.name}</div>

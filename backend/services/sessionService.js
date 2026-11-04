@@ -32,7 +32,8 @@ const createSession = async (mentorId, data) => {
           userId,
           type: 'SESSION',
           title: 'New live session scheduled',
-          body: `${session.title} starts on ${session.startsAt.toISOString()}. The meeting link will open Google Meet or Zoom outside GrowthNest.`,
+          body: `A live session, ${session.title}, has been scheduled. The meeting link will open Google Meet or Zoom outside GrowthNest.`,
+          metadata: { startsAt: session.startsAt.toISOString() },
         })),
       });
     }

@@ -81,15 +81,32 @@ const deleteLesson = async (lessonId, mentorId) => {
     throw error;
   }
 
-  const enrollments = await prisma.enrollment.findMany({ where: { programId: lesson.programId }, select: { id: true, userId: true } });
-  await prisma.lesson.delete({ where: { id: lessonId } });
-  const remaining = await prisma.lesson.findMany({ where: { programId: lesson.programId }, select: { id: true } });
-  const remainingIds = remaining.map(({ id }) => id);
-  for (const enrollment of enrollments) {
-    const completed = remainingIds.length ? await prisma.lessonProgress.count({ where: { userId: enrollment.userId, lessonId: { in: remainingIds }, status: 'COMPLETED' } }) : 0;
-    const progress = remainingIds.length ? Math.round((completed / remainingIds.length) * 100) : 0;
-    await prisma.enrollment.update({ where: { id: enrollment.id }, data: { progress, status: progress === 100 && remainingIds.length ? 'COMPLETED' : 'ACTIVE', completedAt: progress === 100 && remainingIds.length ? new Date() : null } });
-  }
+  await prisma.$transaction(async (tx) => {
+    await tx.lesson.delete({ where: { id: lessonId } });
+    await tx.$executeRaw`
+      WITH lesson_totals AS (
+        SELECT COUNT(*)::int AS total FROM "Lesson" WHERE "programId" = ${lesson.programId}
+      ), completed_by_user AS (
+        SELECT lp."userId", COUNT(*)::int AS completed
+        FROM "LessonProgress" lp
+        JOIN "Lesson" l ON l.id = lp."lessonId"
+        WHERE l."programId" = ${lesson.programId} AND lp.status = 'COMPLETED'
+        GROUP BY lp."userId"
+      ), enrollment_progress AS (
+        SELECT e.id, lt.total, COALESCE(cb.completed, 0) AS completed
+        FROM "Enrollment" e
+        CROSS JOIN lesson_totals lt
+        LEFT JOIN completed_by_user cb ON cb."userId" = e."userId"
+        WHERE e."programId" = ${lesson.programId}
+      )
+      UPDATE "Enrollment" e
+      SET progress = CASE WHEN ep.total = 0 THEN 0 ELSE ROUND(ep.completed * 100.0 / ep.total)::int END,
+          status = CASE WHEN ep.total > 0 AND ep.completed >= ep.total THEN 'COMPLETED'::"EnrollmentStatus" ELSE 'ACTIVE'::"EnrollmentStatus" END,
+          "completedAt" = CASE WHEN ep.total > 0 AND ep.completed >= ep.total THEN COALESCE(e."completedAt", CURRENT_TIMESTAMP) ELSE NULL END
+      FROM enrollment_progress ep
+      WHERE e.id = ep.id
+    `;
+  });
 };
 
 module.exports = {

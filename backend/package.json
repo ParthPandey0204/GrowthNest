@@ -5,9 +5,10 @@
   "scripts": {
     "build": "prisma generate",
     "postinstall": "prisma generate",
-    "migrate": "prisma db push",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "prisma db push && node server.js"
+    "migrate": "prisma migrate deploy",
+    "db:baseline": "prisma migrate resolve --applied 20260818000000_init && prisma migrate resolve --applied 20261004000000_topics_and_notifications && prisma migrate resolve --applied 20261101000000_program_announcements_qa && prisma migrate resolve --applied 20261104000000_revoke_tokens && prisma migrate resolve --applied 20261104000100_lesson_video_url",
+    "test": "node --test",
+    "start": "prisma migrate deploy && node server.js"
   },
   "keywords": [],
   "author": "",

@@ -92,6 +92,8 @@ model Program {
   price       Decimal?      @db.Decimal(10, 2)
   thumbnail   String?
   status      ProgramStatus @default(DRAFT)
+  isApproved  Boolean       @default(false)
+  submittedForReview Boolean @default(false)
   mentorId    String
   mentor      User          @relation("ProgramMentor", fields: [mentorId], references: [id], onDelete: Cascade)
   lessons     Lesson[]
@@ -212,6 +214,7 @@ model Notification {
   body      String
   type      String   @default("INFO")
   readAt    DateTime?
+  metadata  Json?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())

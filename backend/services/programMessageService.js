@@ -66,11 +66,15 @@ const createQuestion = async (programId, user, { title, body }) => {
 };
 
 const createReply = async (programId, messageId, user, body) => {
-  await getAccessibleProgram(programId, user);
-  const parent = await prisma.programMessage.findFirst({ where: { id: messageId, programId, parentId: null, type: 'QUESTION' }, select: { id: true, isResolved: true } });
+  const program = await getAccessibleProgram(programId, user);
+  const parent = await prisma.programMessage.findFirst({ where: { id: messageId, programId, parentId: null, type: 'QUESTION' }, select: { id: true, title: true, authorId: true, isResolved: true } });
   if (!parent) throw fail(404, 'Question not found');
   if (parent.isResolved) throw fail(400, 'This question has been marked as resolved');
-  return prisma.programMessage.create({ data: { programId, authorId: user.id, parentId: messageId, type: 'REPLY', body }, include: { author: { select: authorSelect } } });
+  return prisma.$transaction(async (tx) => {
+    const reply = await tx.programMessage.create({ data: { programId, authorId: user.id, parentId: messageId, type: 'REPLY', body }, include: { author: { select: authorSelect } } });
+    if (parent.authorId !== user.id) await tx.notification.create({ data: { userId: parent.authorId, type: 'REPLY', title: 'New reply to your question', body: `${user.name} replied to “${parent.title || 'your question'}” in ${program.title}.` } });
+    return reply;
+  });
 };
 
 const setQuestionResolved = async (programId, messageId, mentorId, isResolved) => {

@@ -43,23 +43,6 @@ const getProgramEnrollments = async (req, res) => {
   }
 };
 
-const updateProgress = async (req, res) => {
-  try {
-    const enrollment = await enrollmentService.updateEnrollmentProgress(
-      req.params.id,
-      req.user.id,
-      req.body.progress
-    );
-    return res.status(200).json({ enrollment });
-  } catch (error) {
-    console.error('Update enrollment progress error:', error);
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({ message: error.message });
-    }
-    return res.status(500).json({ message: 'Unable to update progress' });
-  }
-};
-
 const updateLessonProgress = async (req, res) => {
   try {
     const lessonProgress = await enrollmentService.updateLessonProgress(
@@ -100,7 +83,6 @@ module.exports = {
   createEnrollment,
   getMyEnrollments,
   getProgramEnrollments,
-  updateProgress,
   updateLessonProgress,
   getLessonProgress,
   getProgressSummary,

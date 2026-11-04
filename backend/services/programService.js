@@ -129,8 +129,9 @@ const updateProgram = async (id, userId, { title, description, price, thumbnail,
     throw error;
   }
 
-  if (status === 'ACTIVE' && existingProgram.status !== 'ACTIVE') {
-    const error = new Error('Programs must be approved by an admin before publication');
+  const editsContent = ['title', 'description', 'price', 'thumbnail'].some((field) => ({ title, description, price, thumbnail })[field] !== undefined);
+  if (status === 'ACTIVE' && (!existingProgram.isApproved || editsContent)) {
+    const error = new Error('This program must be approved by an admin before publication');
     error.statusCode = 403;
     throw error;
   }
@@ -141,10 +142,30 @@ const updateProgram = async (id, userId, { title, description, price, thumbnail,
   if (price !== undefined) updateData.price = price != null ? price : null;
   if (thumbnail !== undefined) updateData.thumbnail = thumbnail || null;
   if (status !== undefined) updateData.status = status;
+  if (existingProgram.status !== 'ACTIVE' && editsContent) {
+    updateData.isApproved = false;
+    updateData.submittedForReview = false;
+  }
 
   return await prisma.program.update({
     where: { id },
     data: updateData,
+  });
+};
+
+const submitProgramForReview = async (id, mentorId) => {
+  const program = await prisma.program.findUnique({ where: { id }, select: { id: true, title: true, mentorId: true, status: true, isApproved: true, submittedForReview: true } });
+  if (!program) throw Object.assign(new Error('Program not found'), { statusCode: 404 });
+  if (program.mentorId !== mentorId) throw Object.assign(new Error('You do not own this program'), { statusCode: 403 });
+  if (program.status !== 'DRAFT') throw Object.assign(new Error('Only draft programs can be submitted for review'), { statusCode: 400 });
+  if (program.isApproved) throw Object.assign(new Error('This program was already approved and can be published by its mentor'), { statusCode: 409 });
+  if (program.submittedForReview) return program;
+
+  return prisma.$transaction(async (tx) => {
+    const admins = await tx.user.findMany({ where: { role: 'ADMIN', isActive: true }, select: { id: true } });
+    const updated = await tx.program.update({ where: { id }, data: { submittedForReview: true } });
+    if (admins.length) await tx.notification.createMany({ data: admins.map(({ id: userId }) => ({ userId, type: 'PROGRAM_REVIEW', title: 'Program review requested', body: `${program.title} is waiting for moderation.` })) });
+    return updated;
   });
 };
 
@@ -179,5 +200,6 @@ module.exports = {
   getProgramById,
   getMentorProgramById,
   updateProgram,
+  submitProgramForReview,
   archiveProgram,
 };

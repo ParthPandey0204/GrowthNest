@@ -13,6 +13,11 @@ function Header({ onMenuToggle }) {
   const [search, setSearch] = useState("");
   const { data: notificationData } = useQuery({ queryKey: ["notifications"], queryFn: getMyNotifications, enabled: Boolean(user) });
   const notifications = notificationData?.notifications ?? [];
+  const notificationBody = (notification) => {
+    const date = notification.metadata?.startsAt;
+    if (notification.type === "SESSION" && date) return `${notification.body} Starts ${new Date(date).toLocaleString()}.`;
+    return notification.type === "SESSION" ? notification.body.replace(/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z/, (value) => new Date(value).toLocaleString()) : notification.body;
+  };
   const handleLogout = async () => {
     try { await logoutRequest(); } catch { /* Local sign-out still clears this browser session. */ }
     logout();
@@ -121,7 +126,7 @@ function Header({ onMenuToggle }) {
               <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5" />
               <path d="M10 19a2 2 0 0 0 4 0" />
             </svg>
-          </button>{isNotificationsOpen && <div className="absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-2xl"><div className="border-b border-slate-100 px-4 py-3"><p className="font-semibold">Notifications</p></div><div className="max-h-80 overflow-y-auto">{notifications.length ? notifications.map((notification) => <button type="button" key={notification.id} onClick={async () => { if (!notification.readAt) { await markNotificationRead(notification.id); queryClient.invalidateQueries({ queryKey: ["notifications"] }); } }} className="block w-full border-b border-slate-100 px-4 py-3 text-left text-sm hover:bg-slate-50"><p className="font-semibold">{notification.title}{!notification.readAt && <span className="ml-2 text-sky-700">• New</span>}</p><p className="mt-1 text-slate-600">{notification.body}</p><p className="mt-2 text-xs text-slate-400">{new Date(notification.createdAt).toLocaleString()}</p></button>) : <p className="p-4 text-sm text-slate-500">No notifications.</p>}</div></div>}</div>
+          </button>{isNotificationsOpen && <div className="absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-2xl"><div className="border-b border-slate-100 px-4 py-3"><p className="font-semibold">Notifications</p></div><div className="max-h-80 overflow-y-auto">{notifications.length ? notifications.map((notification) => <button type="button" key={notification.id} onClick={async () => { if (!notification.readAt) { await markNotificationRead(notification.id); queryClient.invalidateQueries({ queryKey: ["notifications"] }); } }} className="block w-full border-b border-slate-100 px-4 py-3 text-left text-sm hover:bg-slate-50"><p className="font-semibold">{notification.title}{!notification.readAt && <span className="ml-2 text-sky-700">• New</span>}</p><p className="mt-1 text-slate-600">{notificationBody(notification)}</p><p className="mt-2 text-xs text-slate-400">{new Date(notification.createdAt).toLocaleString()}</p></button>) : <p className="p-4 text-sm text-slate-500">No notifications.</p>}</div></div>}</div>
 
           <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/6 px-3 py-2 text-white backdrop-blur">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/12 text-sm font-semibold">

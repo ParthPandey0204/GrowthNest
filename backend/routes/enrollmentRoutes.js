@@ -6,7 +6,6 @@ const roleMiddleware = require('../middleware/roleMiddleware');
 const handleValidation = require('../middleware/validationMiddleware');
 const {
   createEnrollmentValidation,
-  updateProgressValidation,
   updateLessonProgressValidation,
 } = require('../validations/enrollmentValidation');
 
@@ -27,15 +26,6 @@ router.get(
 );
 
 router.get('/me/progress-summary', authMiddleware, roleMiddleware('STUDENT'), enrollmentController.getProgressSummary);
-
-router.patch(
-  '/:id/progress',
-  authMiddleware,
-  roleMiddleware('STUDENT'),
-  updateProgressValidation,
-  handleValidation,
-  enrollmentController.updateProgress
-);
 
 router.patch(
   '/lesson-progress',

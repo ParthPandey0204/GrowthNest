@@ -83,6 +83,17 @@ const updateProgram = async (req, res) => {
   }
 };
 
+const submitProgramForReview = async (req, res) => {
+  try {
+    const program = await programService.submitProgramForReview(req.params.id, req.user.id);
+    return res.status(200).json({ program, message: 'Program submitted for admin review' });
+  } catch (error) {
+    if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+    console.error('Submit program for review error:', error);
+    return res.status(500).json({ message: 'Unable to submit program for review' });
+  }
+};
+
 const archiveProgram = async (req, res) => {
   try {
     const program = await programService.archiveProgram(req.params.id, req.user.id);
@@ -131,6 +142,7 @@ module.exports = {
   getProgramById,
   getMyProgramById,
   updateProgram,
+  submitProgramForReview,
   archiveProgram,
   getProgramAnalytics,
 };
