@@ -1,4 +1,5 @@
 const prisma = require('../prisma/client');
+const { learnerEnrollmentWhere } = require('../services/enrollmentAccess');
 
 const uploadVideo = async (req, res) => {
   try {
@@ -49,8 +50,8 @@ const uploadAssignment = async (req, res) => {
     if (!assignment || assignment.status !== 'PUBLISHED' || (assignment.program && assignment.program.status !== 'ACTIVE')) return res.status(404).json({ message: 'Assignment not found' });
     if (assignment.dueAt && assignment.dueAt < new Date()) return res.status(400).json({ message: 'The due date has passed' });
     if (assignment.programId) {
-      const enrollment = await prisma.enrollment.findFirst({ where: { programId: assignment.programId, userId: req.user.id, status: 'ACTIVE' }, select: { id: true } });
-      if (!enrollment) return res.status(403).json({ message: 'You must be actively enrolled to submit this assignment' });
+      const enrollment = await prisma.enrollment.findFirst({ where: learnerEnrollmentWhere(req.user.id, assignment.programId), select: { id: true } });
+      if (!enrollment) return res.status(403).json({ message: 'You must be enrolled to submit this assignment' });
     }
     const existing = await prisma.submission.findUnique({ where: { assignmentId_userId: { userId: req.user.id, assignmentId } } });
     if (existing?.status === 'REVIEWED') return res.status(409).json({ message: 'A reviewed submission cannot be replaced' });

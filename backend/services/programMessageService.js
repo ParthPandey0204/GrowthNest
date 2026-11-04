@@ -1,4 +1,5 @@
 const prisma = require('../prisma/client');
+const { learnerEnrollmentWhere } = require('./enrollmentAccess');
 
 const fail = (statusCode, message) => Object.assign(new Error(message), { statusCode });
 const authorSelect = { id: true, name: true, role: true, avatar: true };
@@ -8,7 +9,7 @@ const getAccessibleProgram = async (programId, user) => {
   if (!program) throw fail(404, 'Program not found');
   if (user.role === 'MENTOR' && program.mentorId === user.id) return program;
   if (user.role === 'STUDENT') {
-    const enrollment = await prisma.enrollment.findFirst({ where: { programId, userId: user.id, status: { in: ['ACTIVE', 'COMPLETED'] } }, select: { id: true } });
+    const enrollment = await prisma.enrollment.findFirst({ where: learnerEnrollmentWhere(user.id, programId), select: { id: true } });
     if (enrollment) return program;
   }
   throw fail(403, 'You do not have access to this program discussion');
@@ -19,7 +20,7 @@ const listPrograms = async (user) => {
     return prisma.program.findMany({ where: { mentorId: user.id, status: { not: 'ARCHIVED' } }, select: { id: true, title: true, status: true }, orderBy: { updatedAt: 'desc' } });
   }
   return prisma.program.findMany({
-    where: { enrollments: { some: { userId: user.id, status: { in: ['ACTIVE', 'COMPLETED'] } } } },
+    where: { enrollments: { some: learnerEnrollmentWhere(user.id) } },
     select: { id: true, title: true, status: true },
     orderBy: { title: 'asc' },
   });
@@ -46,7 +47,7 @@ const createAnnouncement = async (programId, mentorId, { title, body }) => {
 
   return prisma.$transaction(async (tx) => {
     const announcement = await tx.programMessage.create({ data: { programId, authorId: mentorId, type: 'ANNOUNCEMENT', title, body }, include: { author: { select: authorSelect }, replies: true } });
-    const learners = await tx.enrollment.findMany({ where: { programId, status: 'ACTIVE' }, select: { userId: true } });
+    const learners = await tx.enrollment.findMany({ where: learnerEnrollmentWhere(undefined, programId), select: { userId: true } });
     if (learners.length) {
       await tx.notification.createMany({ data: learners.map(({ userId }) => ({
         userId,

@@ -1,4 +1,5 @@
 const prisma = require('../prisma/client');
+const { learnerEnrollmentWhere } = require('./enrollmentAccess');
 
 const mentorPublicSelect = {
   id: true,
@@ -92,7 +93,7 @@ const getProgramById = async (id, user) => {
     },
   });
   if (!program || !user) return program;
-  const enrolled = await prisma.enrollment.findFirst({ where: { programId: id, userId: user.id, status: 'ACTIVE' }, select: { id: true } });
+  const enrolled = await prisma.enrollment.findFirst({ where: learnerEnrollmentWhere(user.id, id), select: { id: true } });
   if (user.role === 'ADMIN' || program.mentorId === user.id || enrolled) {
     program.lessons = await prisma.lesson.findMany({ where: { programId: id }, orderBy: { order: 'asc' } });
   }

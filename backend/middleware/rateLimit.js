@@ -1,4 +1,11 @@
 const buckets = new Map();
+const pruneTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt <= now) buckets.delete(key);
+  }
+}, 60 * 1000);
+pruneTimer.unref?.();
 
 const rateLimit = ({ windowMs = 15 * 60 * 1000, max = 10 } = {}) => (req, res, next) => {
   const now = Date.now();

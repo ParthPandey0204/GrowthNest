@@ -1,4 +1,5 @@
 const prisma = require('../prisma/client');
+const { learnerEnrollmentWhere } = require('./enrollmentAccess');
 
 const createLesson = async (programId, userId, { title, content, topic, type, order: reqOrder }) => {
   const existingProgram = await prisma.program.findUnique({
@@ -53,7 +54,7 @@ const getLessonsByProgramId = async (programId, user) => {
   if (existingProgram.status !== 'ACTIVE' && user?.role !== 'ADMIN' && existingProgram.mentorId !== user?.id) {
     const error = new Error('Program not found'); error.statusCode = 404; throw error;
   }
-  const enrolled = user && await prisma.enrollment.findFirst({ where: { programId, userId: user.id, status: 'ACTIVE' }, select: { id: true } });
+  const enrolled = user && await prisma.enrollment.findFirst({ where: learnerEnrollmentWhere(user.id, programId), select: { id: true } });
   const canReadContent = user?.role === 'ADMIN' || existingProgram.mentorId === user?.id || Boolean(enrolled);
   return await prisma.lesson.findMany({
     where: { programId },

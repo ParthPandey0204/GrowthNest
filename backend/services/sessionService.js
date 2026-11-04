@@ -1,4 +1,5 @@
 const prisma = require('../prisma/client');
+const { learnerEnrollmentWhere } = require('./enrollmentAccess');
 
 const notFound = (message) => Object.assign(new Error(message), { statusCode: 404 });
 const forbidden = (message) => Object.assign(new Error(message), { statusCode: 403 });
@@ -24,7 +25,7 @@ const createSession = async (mentorId, data) => {
   });
 
   if (session.programId) {
-    const students = await prisma.enrollment.findMany({ where: { programId: session.programId, status: 'ACTIVE' }, select: { userId: true } });
+    const students = await prisma.enrollment.findMany({ where: learnerEnrollmentWhere(undefined, session.programId), select: { userId: true } });
     if (students.length) {
       await prisma.notification.createMany({
         data: students.map(({ userId }) => ({
@@ -93,7 +94,7 @@ const deleteSession = async (id, user) => {
 };
 
 const attendSession = async (id, userId) => {
-  const existing = await prisma.session.findUnique({ where: { id }, include: { program: { select: { enrollments: { where: { userId, status: 'ACTIVE' }, select: { id: true } } } } } });
+  const existing = await prisma.session.findUnique({ where: { id }, include: { program: { select: { enrollments: { where: learnerEnrollmentWhere(userId), select: { id: true } } } } } });
   if (!existing) throw notFound('Session not found');
   if (!['SCHEDULED', 'LIVE'].includes(existing.status)) throw Object.assign(new Error('Cannot mark attendance for this session right now'), { statusCode: 400 });
   if (!existing.programId || !existing.program?.enrollments.length) throw forbidden('You must be actively enrolled in a program to attend');

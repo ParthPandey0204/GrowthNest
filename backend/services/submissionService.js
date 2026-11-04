@@ -1,5 +1,6 @@
 const prisma = require('../prisma/client');
 const { mentorPublicSelect } = require('./programService');
+const { learnerEnrollmentWhere } = require('./enrollmentAccess');
 
 const submitAssignment = async (userId, { assignmentId, content, fileUrl, file }) => {
   const assignment = await prisma.assignment.findUnique({
@@ -15,7 +16,7 @@ const submitAssignment = async (userId, { assignmentId, content, fileUrl, file }
     const error = new Error('Assignment is not available'); error.statusCode = 404; throw error;
   }
   if (assignment.dueAt && assignment.dueAt < new Date()) { const error = new Error('The due date has passed'); error.statusCode = 400; throw error; }
-  if (assignment.programId && !(await prisma.enrollment.findFirst({ where: { programId: assignment.programId, userId, status: 'ACTIVE' }, select: { id: true } }))) { const error = new Error('You must be actively enrolled to submit this assignment'); error.statusCode = 403; throw error; }
+  if (assignment.programId && !(await prisma.enrollment.findFirst({ where: learnerEnrollmentWhere(userId, assignment.programId), select: { id: true } }))) { const error = new Error('You must be enrolled to submit this assignment'); error.statusCode = 403; throw error; }
 
   let uploadedFileUrl = fileUrl || null;
   if (file) {

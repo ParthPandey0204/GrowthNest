@@ -1,4 +1,5 @@
 const prisma = require('../prisma/client');
+const { learnerEnrollmentWhere } = require('./enrollmentAccess');
 
 const createAssignment = async (userId, { title, description, dueDate, programId, topic }) => {
   const program = await prisma.program.findUnique({
@@ -31,7 +32,7 @@ const createAssignment = async (userId, { title, description, dueDate, programId
 };
 
 const listAssignments = async (programId, user) => {
-  const where = user.role === 'MENTOR' ? { program: { mentorId: user.id } } : user.role === 'STUDENT' ? { status: 'PUBLISHED', program: { status: 'ACTIVE', enrollments: { some: { userId: user.id, status: 'ACTIVE' } } } } : { status: 'PUBLISHED', program: { status: 'ACTIVE' } };
+  const where = user.role === 'MENTOR' ? { program: { mentorId: user.id } } : user.role === 'STUDENT' ? { status: 'PUBLISHED', program: { status: 'ACTIVE', enrollments: { some: learnerEnrollmentWhere(user.id) } } } : { status: 'PUBLISHED', program: { status: 'ACTIVE' } };
 
   if (programId) {
     const program = await prisma.program.findUnique({
@@ -56,7 +57,7 @@ const listAssignments = async (programId, user) => {
 
 const getStudentAssignments = async (userId) => {
   const enrollments = await prisma.enrollment.findMany({
-    where: { userId },
+    where: learnerEnrollmentWhere(userId),
     select: { programId: true }
   });
 
